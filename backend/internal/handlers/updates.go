@@ -181,7 +181,7 @@ func (h *Handler) checkGitHubUpdate() updateStatus {
 	}
 	repo := strings.TrimSpace(h.cfg.GitHubRepo)
 	if repo == "" {
-		repo = "TaskMaster329/Browser-Gateway"
+		repo = "master-elizar/Browser-Gateway-main"
 	}
 
 	gotRelease := false

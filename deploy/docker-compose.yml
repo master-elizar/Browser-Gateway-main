@@ -72,7 +72,7 @@ services:
       CERTS_DIR: /opt/browser-gateway/data/certs
       SETUP_KEY_FILE: /opt/browser-gateway/data/setup.bootstrap
       UPDATE_MARKER_FILE: /opt/browser-gateway/data/update.requested
-      GITHUB_REPO: TaskMaster329/Browser-Gateway
+      GITHUB_REPO: master-elizar/Browser-Gateway-main
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ../data:/opt/browser-gateway/data
