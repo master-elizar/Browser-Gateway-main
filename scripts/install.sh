@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Browser Gateway on a bare Ubuntu/Debian host into /opt/browser-gateway.
 #
-#   curl -fsSL https://raw.githubusercontent.com/TaskMaster329/Browser-Gateway/main/scripts/install.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/master-elizar/Browser-Gateway-main/master/scripts/install.sh | sudo bash
 #
 # Env:
 #   BG_INSTALL_DIR BG_REPO_URL BG_REPO_REF BG_PUBLIC_HOST BG_SKIP_CLONE
@@ -9,8 +9,8 @@
 #   BG_VERBOSE=1   show under-the-hood logs
 set -euo pipefail
 
-REPO_URL="${BG_REPO_URL:-https://github.com/TaskMaster329/Browser-Gateway.git}"
-REPO_REF="${BG_REPO_REF:-main}"
+REPO_URL="${BG_REPO_URL:-https://github.com/master-elizar/Browser-Gateway-main.git}"
+REPO_REF="${BG_REPO_REF:-master}"
 INSTALL_DIR="${BG_INSTALL_DIR:-/opt/browser-gateway}"
 PUBLIC_HOST="${BG_PUBLIC_HOST:-}"
 ADMIN_EMAIL="${BG_ADMIN_EMAIL:-admin@browser-gateway.local}"
