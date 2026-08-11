@@ -1,0 +1,8 @@
+[Unit]
+Description=Browser Gateway apply update
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/opt/browser-gateway/scripts/apply-update.sh

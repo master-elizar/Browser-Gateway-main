@@ -1,0 +1,114 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Docker up",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "browser_gateway_docker_up", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ]
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Active users",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "targets": [
+        { "expr": "browser_gateway_users_active", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Running sessions",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "targets": [
+        { "expr": "browser_gateway_sessions{status=\"RUNNING\"}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "HTTP rps (5m)",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(browser_gateway_http_requests_total[5m]))", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+    },
+    {
+      "type": "timeseries",
+      "title": "Sessions by status",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "browser_gateway_sessions", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP request rate by status",
+      "id": 6,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "targets": [
+        { "expr": "sum by (status) (rate(browser_gateway_http_requests_total[1m]))", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP p95 latency",
+      "id": 7,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(browser_gateway_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Containers created / destroyed",
+      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "targets": [
+        { "expr": "rate(browser_gateway_containers_created_total[5m])", "legendFormat": "created", "refId": "A" },
+        { "expr": "rate(browser_gateway_containers_destroyed_total[5m])", "legendFormat": "destroyed", "refId": "B" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "VNC proxy",
+      "id": 9,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "targets": [
+        { "expr": "rate(browser_gateway_vnc_proxy_connections_total[5m])", "legendFormat": "connections", "refId": "A" },
+        { "expr": "rate(browser_gateway_vnc_proxy_errors_total[5m])", "legendFormat": "errors", "refId": "B" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["browser-gateway"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "browser",
+  "title": "Browser Gateway",
+  "uid": "browser-gateway-overview",
+  "version": 1
+}

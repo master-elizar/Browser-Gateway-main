@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Remote</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #screen {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="screen"></div>
+  <script type="module">
+    import RFB from "./core/rfb.js";
+
+    function getQueryVar(name, def) {
+      const q = new URLSearchParams(window.location.search);
+      const v = q.get(name);
+      return v === null ? def : v;
+    }
+
+    const path = getQueryVar("path", "websockify");
+    const resize = getQueryVar("resize", "scale"); // scale | remote
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = `${proto}://${window.location.host}/${path}`;
+    const screen = document.getElementById("screen");
+
+    const rfb = new RFB(screen, url);
+    // Fit: scale into container. Stretch: ask remote desktop to match container.
+    rfb.scaleViewport = resize === "scale";
+    rfb.resizeSession = resize === "remote";
+    rfb.clipViewport = false;
+    rfb.showDotCursor = true;
+    rfb.background = "#000";
+    rfb.focusOnClick = true;
+
+    // Force layout recalc when iframe box changes (parent stretch / window resize).
+    const ro = new ResizeObserver(() => {
+      window.dispatchEvent(new Event("resize"));
+    });
+    ro.observe(screen);
+
+    rfb.addEventListener("connect", () => {
+      window.dispatchEvent(new Event("resize"));
+    });
+  </script>
+</body>
+</html>

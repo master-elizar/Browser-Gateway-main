@@ -1,0 +1,52 @@
+tls:
+  certificates:
+    - certFile: /certs/cert.pem
+      keyFile: /certs/key.pem
+
+http:
+  middlewares:
+    security-headers:
+      headers:
+        # SAMEORIGIN allows our own /novnc iframe; still blocks third-party clickjacking
+        frameDeny: false
+        customFrameOptionsValue: SAMEORIGIN
+        contentTypeNosniff: true
+        referrerPolicy: no-referrer
+        browserXssFilter: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        forceSTSHeader: true
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:; media-src 'self' blob:; frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=()"
+
+  routers:
+    api-secure:
+      rule: PathPrefix(`/api`) || PathPrefix(`/healthz`) || PathPrefix(`/readyz`) || PathPrefix(`/ws`)
+      entryPoints:
+        - websecure
+      service: backend
+      priority: 100
+      tls: {}
+      middlewares:
+        - security-headers
+
+    frontend-secure:
+      rule: PathPrefix(`/`)
+      entryPoints:
+        - websecure
+      service: frontend
+      priority: 1
+      tls: {}
+      middlewares:
+        - security-headers
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: http://backend:8080
+
+    frontend:
+      loadBalancer:
+        servers:
+          - url: http://frontend:80

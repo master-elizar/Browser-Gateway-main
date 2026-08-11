@@ -1,0 +1,10 @@
+Package: browser-gateway
+Version: 0.9.5
+Section: net
+Priority: optional
+Architecture: amd64
+Depends: docker-ce | docker.io, docker-compose-plugin | docker-compose-v2, git, openssl, curl, ca-certificates
+Maintainer: TaskMaster329 <90029797+TaskMaster329@users.noreply.github.com>
+Description: Browser Gateway — Chromium remote browser as a service
+ Installs the Browser Gateway stack under /opt/browser-gateway and a
+ systemd unit that runs Docker Compose (Traefik, API, UI, browser engine).

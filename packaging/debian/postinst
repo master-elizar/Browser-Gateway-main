@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+case "$1" in
+  configure)
+    export BG_SKIP_CLONE=1
+    export BG_INSTALL_DIR=/opt/browser-gateway
+    /opt/browser-gateway/scripts/install.sh
+    ;;
+esac
+exit 0

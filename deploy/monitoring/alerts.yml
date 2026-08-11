@@ -1,0 +1,17 @@
+groups:
+  - name: browser-gateway
+    rules:
+      - alert: BrowserGatewayDockerDown
+        expr: browser_gateway_docker_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Docker unavailable to Browser Gateway backend
+      - alert: BrowserGatewayHighSessionErrors
+        expr: increase(browser_gateway_containers_created_total[5m]) == 0 and increase(browser_gateway_http_requests_total{code=~"5.."}[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elevated 5xx or no container creates

@@ -1,0 +1,371 @@
+export type ThemeId =
+  | "slate"
+  | "ocean"
+  | "aurora"
+  | "ember"
+  | "forest"
+  | "graphite"
+  | "crimson"
+  | "daylight";
+
+export type ThemeDef = {
+  id: ThemeId;
+  /** i18n key under theme.* */
+  nameKey: string;
+  mode: "dark" | "light";
+  /** accent, surface, bg for picker preview */
+  swatches: [string, string, string];
+  vars: Record<string, string>;
+};
+
+const STORAGE_KEY = "bg.theme";
+
+export const THEMES: ThemeDef[] = [
+  {
+    id: "slate",
+    nameKey: "theme.slate",
+    mode: "dark",
+    swatches: ["#2aa391", "#121a22", "#090d12"],
+    vars: {
+      "--color-bg": "#090d12",
+      "--color-bg-elevated": "#0d1319",
+      "--color-ink": "#0c1218",
+      "--color-panel": "#121a22",
+      "--color-panel-2": "#18232e",
+      "--color-panel-3": "#1e2b38",
+      "--color-surface": "#141c25",
+      "--color-surface-hover": "#1a2430",
+      "--color-line": "#243140",
+      "--color-line-strong": "#334556",
+      "--color-fog": "#8b9faf",
+      "--color-muted": "#6b7f90",
+      "--color-snow": "#e8eef4",
+      "--color-white": "#f5f8fb",
+      "--color-signal": "#2aa391",
+      "--color-signal-2": "#3bc4ae",
+      "--color-signal-dim": "rgba(42, 163, 145, 0.14)",
+      "--color-success": "#3dba7e",
+      "--color-success-dim": "rgba(61, 186, 126, 0.14)",
+      "--color-warn": "#d4a017",
+      "--color-warn-dim": "rgba(212, 160, 23, 0.14)",
+      "--color-danger": "#e05555",
+      "--color-danger-dim": "rgba(224, 85, 85, 0.14)",
+      "--color-info": "#4a9ede",
+      "--color-info-dim": "rgba(74, 158, 222, 0.14)",
+      "--theme-glow-a": "rgba(42, 163, 145, 0.09)",
+      "--theme-glow-b": "rgba(74, 158, 222, 0.07)",
+      "--theme-bg-top": "#0a0e13",
+      "--theme-bg-bottom": "#080b10",
+      "--theme-selection": "rgba(42, 163, 145, 0.35)",
+      "--shadow-glow": "0 0 0 1px rgba(42, 163, 145, 0.18), 0 8px 28px rgba(0, 0, 0, 0.4)",
+    },
+  },
+  {
+    id: "ocean",
+    nameKey: "theme.ocean",
+    mode: "dark",
+    swatches: ["#3b82f6", "#0f172a", "#020617"],
+    vars: {
+      "--color-bg": "#020617",
+      "--color-bg-elevated": "#0b1220",
+      "--color-ink": "#0a1220",
+      "--color-panel": "#0f172a",
+      "--color-panel-2": "#152238",
+      "--color-panel-3": "#1c2d48",
+      "--color-surface": "#132033",
+      "--color-surface-hover": "#1a2b42",
+      "--color-line": "#243b5a",
+      "--color-line-strong": "#35557a",
+      "--color-fog": "#93a9c4",
+      "--color-muted": "#6b829e",
+      "--color-snow": "#e8eef8",
+      "--color-white": "#f4f7fc",
+      "--color-signal": "#3b82f6",
+      "--color-signal-2": "#60a5fa",
+      "--color-signal-dim": "rgba(59, 130, 246, 0.16)",
+      "--color-success": "#34d399",
+      "--color-success-dim": "rgba(52, 211, 153, 0.14)",
+      "--color-warn": "#f59e0b",
+      "--color-warn-dim": "rgba(245, 158, 11, 0.14)",
+      "--color-danger": "#f87171",
+      "--color-danger-dim": "rgba(248, 113, 113, 0.14)",
+      "--color-info": "#38bdf8",
+      "--color-info-dim": "rgba(56, 189, 248, 0.14)",
+      "--theme-glow-a": "rgba(59, 130, 246, 0.12)",
+      "--theme-glow-b": "rgba(56, 189, 248, 0.08)",
+      "--theme-bg-top": "#020617",
+      "--theme-bg-bottom": "#01040c",
+      "--theme-selection": "rgba(59, 130, 246, 0.35)",
+      "--shadow-glow": "0 0 0 1px rgba(59, 130, 246, 0.2), 0 8px 28px rgba(0, 0, 0, 0.45)",
+    },
+  },
+  {
+    id: "aurora",
+    nameKey: "theme.aurora",
+    mode: "dark",
+    swatches: ["#22d3ee", "#0c191c", "#061012"],
+    vars: {
+      "--color-bg": "#061012",
+      "--color-bg-elevated": "#0a171a",
+      "--color-ink": "#081416",
+      "--color-panel": "#0c191c",
+      "--color-panel-2": "#122428",
+      "--color-panel-3": "#183035",
+      "--color-surface": "#102022",
+      "--color-surface-hover": "#163034",
+      "--color-line": "#1f3a40",
+      "--color-line-strong": "#2d535b",
+      "--color-fog": "#8fb6bc",
+      "--color-muted": "#6a9096",
+      "--color-snow": "#e6f4f5",
+      "--color-white": "#f2fafb",
+      "--color-signal": "#06b6d4",
+      "--color-signal-2": "#22d3ee",
+      "--color-signal-dim": "rgba(6, 182, 212, 0.16)",
+      "--color-success": "#4ade80",
+      "--color-success-dim": "rgba(74, 222, 128, 0.14)",
+      "--color-warn": "#fbbf24",
+      "--color-warn-dim": "rgba(251, 191, 36, 0.14)",
+      "--color-danger": "#fb7185",
+      "--color-danger-dim": "rgba(251, 113, 133, 0.14)",
+      "--color-info": "#38bdf8",
+      "--color-info-dim": "rgba(56, 189, 248, 0.14)",
+      "--theme-glow-a": "rgba(6, 182, 212, 0.12)",
+      "--theme-glow-b": "rgba(74, 222, 128, 0.07)",
+      "--theme-bg-top": "#061012",
+      "--theme-bg-bottom": "#040c0e",
+      "--theme-selection": "rgba(6, 182, 212, 0.35)",
+      "--shadow-glow": "0 0 0 1px rgba(6, 182, 212, 0.2), 0 8px 28px rgba(0, 0, 0, 0.4)",
+    },
+  },
+  {
+    id: "ember",
+    nameKey: "theme.ember",
+    mode: "dark",
+    swatches: ["#f59e0b", "#1a1410", "#120e0b"],
+    vars: {
+      "--color-bg": "#120e0b",
+      "--color-bg-elevated": "#1a1410",
+      "--color-ink": "#16110d",
+      "--color-panel": "#1c1612",
+      "--color-panel-2": "#271e18",
+      "--color-panel-3": "#32271f",
+      "--color-surface": "#221b16",
+      "--color-surface-hover": "#2c231c",
+      "--color-line": "#3a2e24",
+      "--color-line-strong": "#534234",
+      "--color-fog": "#b7a08a",
+      "--color-muted": "#8f7a66",
+      "--color-snow": "#f3ebe3",
+      "--color-white": "#faf6f1",
+      "--color-signal": "#ea8c1a",
+      "--color-signal-2": "#f5a524",
+      "--color-signal-dim": "rgba(234, 140, 26, 0.16)",
+      "--color-success": "#65a30d",
+      "--color-success-dim": "rgba(101, 163, 13, 0.14)",
+      "--color-warn": "#fbbf24",
+      "--color-warn-dim": "rgba(251, 191, 36, 0.16)",
+      "--color-danger": "#ef4444",
+      "--color-danger-dim": "rgba(239, 68, 68, 0.14)",
+      "--color-info": "#fb923c",
+      "--color-info-dim": "rgba(251, 146, 60, 0.14)",
+      "--theme-glow-a": "rgba(234, 140, 26, 0.12)",
+      "--theme-glow-b": "rgba(239, 68, 68, 0.06)",
+      "--theme-bg-top": "#16110d",
+      "--theme-bg-bottom": "#0e0b08",
+      "--theme-selection": "rgba(234, 140, 26, 0.35)",
+      "--shadow-glow": "0 0 0 1px rgba(234, 140, 26, 0.22), 0 8px 28px rgba(0, 0, 0, 0.45)",
+    },
+  },
+  {
+    id: "forest",
+    nameKey: "theme.forest",
+    mode: "dark",
+    swatches: ["#4ade80", "#101813", "#0a100c"],
+    vars: {
+      "--color-bg": "#0a100c",
+      "--color-bg-elevated": "#101813",
+      "--color-ink": "#0d1410",
+      "--color-panel": "#121a15",
+      "--color-panel-2": "#1a261e",
+      "--color-panel-3": "#223228",
+      "--color-surface": "#162019",
+      "--color-surface-hover": "#1e2b22",
+      "--color-line": "#2a3b30",
+      "--color-line-strong": "#3c5444",
+      "--color-fog": "#9ab5a4",
+      "--color-muted": "#738f7e",
+      "--color-snow": "#e8f2eb",
+      "--color-white": "#f3faf5",
+      "--color-signal": "#22c55e",
+      "--color-signal-2": "#4ade80",
+      "--color-signal-dim": "rgba(34, 197, 94, 0.15)",
+      "--color-success": "#86efac",
+      "--color-success-dim": "rgba(134, 239, 172, 0.14)",
+      "--color-warn": "#eab308",
+      "--color-warn-dim": "rgba(234, 179, 8, 0.14)",
+      "--color-danger": "#f87171",
+      "--color-danger-dim": "rgba(248, 113, 113, 0.14)",
+      "--color-info": "#5eead4",
+      "--color-info-dim": "rgba(94, 234, 212, 0.14)",
+      "--theme-glow-a": "rgba(34, 197, 94, 0.11)",
+      "--theme-glow-b": "rgba(94, 234, 212, 0.06)",
+      "--theme-bg-top": "#0c1410",
+      "--theme-bg-bottom": "#070c09",
+      "--theme-selection": "rgba(34, 197, 94, 0.35)",
+      "--shadow-glow": "0 0 0 1px rgba(34, 197, 94, 0.2), 0 8px 28px rgba(0, 0, 0, 0.4)",
+    },
+  },
+  {
+    id: "graphite",
+    nameKey: "theme.graphite",
+    mode: "dark",
+    swatches: ["#a3a3a3", "#171717", "#0a0a0a"],
+    vars: {
+      "--color-bg": "#0a0a0a",
+      "--color-bg-elevated": "#111111",
+      "--color-ink": "#0f0f0f",
+      "--color-panel": "#141414",
+      "--color-panel-2": "#1c1c1c",
+      "--color-panel-3": "#262626",
+      "--color-surface": "#181818",
+      "--color-surface-hover": "#222222",
+      "--color-line": "#2a2a2a",
+      "--color-line-strong": "#3f3f3f",
+      "--color-fog": "#a3a3a3",
+      "--color-muted": "#737373",
+      "--color-snow": "#f5f5f5",
+      "--color-white": "#fafafa",
+      "--color-signal": "#d4d4d4",
+      "--color-signal-2": "#e5e5e5",
+      "--color-signal-dim": "rgba(212, 212, 212, 0.12)",
+      "--color-success": "#86efac",
+      "--color-success-dim": "rgba(134, 239, 172, 0.12)",
+      "--color-warn": "#fbbf24",
+      "--color-warn-dim": "rgba(251, 191, 36, 0.12)",
+      "--color-danger": "#f87171",
+      "--color-danger-dim": "rgba(248, 113, 113, 0.12)",
+      "--color-info": "#a3a3a3",
+      "--color-info-dim": "rgba(163, 163, 163, 0.12)",
+      "--theme-glow-a": "rgba(255, 255, 255, 0.04)",
+      "--theme-glow-b": "rgba(255, 255, 255, 0.02)",
+      "--theme-bg-top": "#0c0c0c",
+      "--theme-bg-bottom": "#050505",
+      "--theme-selection": "rgba(212, 212, 212, 0.28)",
+      "--shadow-glow": "0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 28px rgba(0, 0, 0, 0.5)",
+    },
+  },
+  {
+    id: "crimson",
+    nameKey: "theme.crimson",
+    mode: "dark",
+    swatches: ["#f43f5e", "#1a1014", "#100a0d"],
+    vars: {
+      "--color-bg": "#100a0d",
+      "--color-bg-elevated": "#180f14",
+      "--color-ink": "#140c10",
+      "--color-panel": "#1a1116",
+      "--color-panel-2": "#261820",
+      "--color-panel-3": "#322029",
+      "--color-surface": "#20141a",
+      "--color-surface-hover": "#2a1b23",
+      "--color-line": "#3a2430",
+      "--color-line-strong": "#533542",
+      "--color-fog": "#c4a0ad",
+      "--color-muted": "#94707e",
+      "--color-snow": "#f8eef2",
+      "--color-white": "#fcf6f8",
+      "--color-signal": "#e11d48",
+      "--color-signal-2": "#fb7185",
+      "--color-signal-dim": "rgba(225, 29, 72, 0.16)",
+      "--color-success": "#4ade80",
+      "--color-success-dim": "rgba(74, 222, 128, 0.14)",
+      "--color-warn": "#fbbf24",
+      "--color-warn-dim": "rgba(251, 191, 36, 0.14)",
+      "--color-danger": "#fb7185",
+      "--color-danger-dim": "rgba(251, 113, 133, 0.16)",
+      "--color-info": "#f472b6",
+      "--color-info-dim": "rgba(244, 114, 182, 0.14)",
+      "--theme-glow-a": "rgba(225, 29, 72, 0.12)",
+      "--theme-glow-b": "rgba(244, 114, 182, 0.06)",
+      "--theme-bg-top": "#140c10",
+      "--theme-bg-bottom": "#0c0709",
+      "--theme-selection": "rgba(225, 29, 72, 0.32)",
+      "--shadow-glow": "0 0 0 1px rgba(225, 29, 72, 0.22), 0 8px 28px rgba(0, 0, 0, 0.45)",
+    },
+  },
+  {
+    id: "daylight",
+    nameKey: "theme.daylight",
+    mode: "light",
+    swatches: ["#0d9488", "#ffffff", "#f1f5f9"],
+    vars: {
+      "--color-bg": "#f1f5f9",
+      "--color-bg-elevated": "#ffffff",
+      "--color-ink": "#ffffff",
+      "--color-panel": "#ffffff",
+      "--color-panel-2": "#f8fafc",
+      "--color-panel-3": "#eef2f7",
+      "--color-surface": "#f8fafc",
+      "--color-surface-hover": "#eef2f7",
+      "--color-line": "#d8e0ea",
+      "--color-line-strong": "#b8c5d4",
+      "--color-fog": "#5b6b7c",
+      "--color-muted": "#7a8a9a",
+      "--color-snow": "#0f172a",
+      "--color-white": "#020617",
+      "--color-signal": "#0d9488",
+      "--color-signal-2": "#14b8a6",
+      "--color-signal-dim": "rgba(13, 148, 136, 0.12)",
+      "--color-success": "#16a34a",
+      "--color-success-dim": "rgba(22, 163, 74, 0.12)",
+      "--color-warn": "#d97706",
+      "--color-warn-dim": "rgba(217, 119, 6, 0.12)",
+      "--color-danger": "#dc2626",
+      "--color-danger-dim": "rgba(220, 38, 38, 0.12)",
+      "--color-info": "#0284c7",
+      "--color-info-dim": "rgba(2, 132, 199, 0.12)",
+      "--theme-glow-a": "rgba(13, 148, 136, 0.08)",
+      "--theme-glow-b": "rgba(2, 132, 199, 0.06)",
+      "--theme-bg-top": "#f8fafc",
+      "--theme-bg-bottom": "#e8eef5",
+      "--theme-selection": "rgba(13, 148, 136, 0.25)",
+      "--shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06)",
+      "--shadow-md": "0 10px 30px rgba(15, 23, 42, 0.08)",
+      "--shadow-glow": "0 0 0 1px rgba(13, 148, 136, 0.15), 0 10px 28px rgba(15, 23, 42, 0.08)",
+    },
+  },
+];
+
+export function getTheme(id: string | null | undefined): ThemeDef {
+  return THEMES.find((t) => t.id === id) ?? THEMES[0]!;
+}
+
+export function readStoredThemeId(): ThemeId {
+  try {
+    const v = localStorage.getItem(STORAGE_KEY);
+    if (v && THEMES.some((t) => t.id === v)) return v as ThemeId;
+  } catch {
+    /* ignore */
+  }
+  return "slate";
+}
+
+export function storeThemeId(id: ThemeId) {
+  try {
+    localStorage.setItem(STORAGE_KEY, id);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Apply theme CSS variables before React paint (also used by provider). */
+export function applyTheme(id: ThemeId) {
+  const theme = getTheme(id);
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme.id);
+  root.setAttribute("data-mode", theme.mode);
+  for (const [key, value] of Object.entries(theme.vars)) {
+    root.style.setProperty(key, value);
+  }
+}

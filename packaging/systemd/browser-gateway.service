@@ -1,0 +1,21 @@
+[Unit]
+Description=Browser Gateway
+Documentation=https://github.com/TaskMaster329/Browser-Gateway
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/browser-gateway/deploy
+EnvironmentFile=-/opt/browser-gateway/deploy/.env
+TimeoutStartSec=300
+TimeoutStopSec=120
+# Start/stop only — builds happen during install (or: systemd-exec.sh build)
+ExecStart=/opt/browser-gateway/scripts/systemd-exec.sh start
+ExecStop=/opt/browser-gateway/scripts/systemd-exec.sh stop
+ExecReload=/opt/browser-gateway/scripts/systemd-exec.sh reload
+
+[Install]
+WantedBy=multi-user.target

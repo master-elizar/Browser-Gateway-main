@@ -1,0 +1,17 @@
+.DS_Store
+.env
+*.pem
+*.key
+backend/bin/
+backend/vendor/
+**/node_modules/
+frontend/dist/
+.idea/
+.vscode/
+*.log
+configs/backend.env
+deploy/.env
+dist/
+*.deb
+data/certs/*
+!data/certs/.gitkeep

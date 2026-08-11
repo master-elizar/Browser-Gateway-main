@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Browser Gateway">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="4" x2="52" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#121a22"/>
+      <stop offset="1" stop-color="#0c1218"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="18" y1="16" x2="46" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3bc4ae"/>
+      <stop offset="1" stop-color="#2aa391"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="12" y="14" width="40" height="36" rx="6" fill="#18232e" stroke="url(#accent)" stroke-width="2"/>
+  <circle cx="18.5" cy="20.5" r="1.6" fill="#e05555"/>
+  <circle cx="23.5" cy="20.5" r="1.6" fill="#d4a017"/>
+  <circle cx="28.5" cy="20.5" r="1.6" fill="#3dba7e"/>
+  <rect x="16" y="25" width="32" height="21" rx="3" fill="#0c1218"/>
+  <path d="M32 29.5c4.2 0 7.5 2.8 7.5 6.6 0 4.4-3.6 7.4-7.5 10.4-3.9-3-7.5-6-7.5-10.4 0-3.8 3.3-6.6 7.5-6.6z" fill="none" stroke="url(#accent)" stroke-width="2.2" stroke-linejoin="round"/>
+  <circle cx="32" cy="36" r="2.4" fill="#3bc4ae"/>
+</svg>

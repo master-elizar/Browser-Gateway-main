@@ -1,0 +1,235 @@
+name: browser-gateway
+
+networks:
+  edge:
+  internal:
+  browser-net:
+    internal: false
+
+volumes:
+  postgres_data:
+  redis_data:
+  traefik_certs:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alertmanager_data:
+
+services:
+  traefik:
+    image: traefik:v3.5
+    restart: unless-stopped
+    command:
+      # Docker Engine 29 rejects Traefik's embedded Docker client API.
+      # Stage 2 uses file provider; restore docker provider after Traefik/Docker align.
+      - --providers.docker=false
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - --entrypoints.websecure.address=:443
+      - --api.dashboard=false
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ../data/certs:/certs:ro
+    networks:
+      - edge
+      - internal
+
+  frontend:
+    build:
+      context: ../frontend
+    restart: unless-stopped
+    networks:
+      - edge
+      - internal
+
+  backend:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    env_file:
+      - ../configs/backend.env
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: postgres://bg:${POSTGRES_PASSWORD:-bg}@postgres:5432/browser_gateway?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      DOCKER_HOST: unix:///var/run/docker.sock
+      BROWSER_NETWORK: browser-gateway_browser-net
+      TURN_URLS: ${TURN_URLS:-turn:localhost:3478}
+      TURN_USERNAME: bg
+      TURN_PASSWORD: bgturn
+      BROWSER_MEMORY_MB: "1536"
+      BROWSER_CPUS: "1.5"
+      BROWSER_IMAGE: browser-gateway/browser-engine:local
+      BROWSER_IMAGE_FIREFOX: browser-gateway/browser-engine-firefox:local
+      CERTS_DIR: /opt/browser-gateway/data/certs
+      SETUP_KEY_FILE: /opt/browser-gateway/data/setup.bootstrap
+      UPDATE_MARKER_FILE: /opt/browser-gateway/data/update.requested
+      GITHUB_REPO: TaskMaster329/Browser-Gateway
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ../data:/opt/browser-gateway/data
+    # distroless nonroot needs docker group to talk to the engine socket
+    group_add:
+      - "${DOCKER_GID}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - edge
+      - internal
+      - browser-net
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: browser_gateway
+      POSTGRES_USER: bg
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bg}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bg -d browser_gateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal
+
+  coturn:
+    image: coturn/coturn:4.6
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=3478
+      - --fingerprint
+      - --lt-cred-mech
+      - --user=bg:bgturn
+      - --realm=browser-gateway.local
+
+  browser-engine:
+    build:
+      context: ../browser-engine
+      args:
+        ENGINE: chromium
+    image: browser-gateway/browser-engine:local
+    profiles:
+      - build-only
+
+  browser-engine-firefox:
+    build:
+      context: ../browser-engine
+      args:
+        ENGINE: firefox
+    image: browser-gateway/browser-engine-firefox:local
+    profiles:
+      - build-only
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+      - alertmanager
+    networks:
+      - internal
+      - edge
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-ChangeMeGrafana123!}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL:-http://localhost:3000}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - edge
+      - internal
+
+  loki:
+    image: grafana/loki:3.4.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - internal
+      - edge
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    networks:
+      - internal
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "9093:9093"
+    networks:
+      - internal
+      - edge

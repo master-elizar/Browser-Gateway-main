@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+case "$1" in
+  remove|upgrade|deconfigure)
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl stop browser-gateway.service 2>/dev/null || true
+    fi
+    if [ -d /opt/browser-gateway/deploy ] && command -v docker >/dev/null 2>&1; then
+      (cd /opt/browser-gateway/deploy && docker compose --env-file .env down 2>/dev/null) || true
+    fi
+    ;;
+esac
+exit 0
