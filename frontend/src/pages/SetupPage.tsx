@@ -56,23 +56,18 @@ export function SetupPage() {
 
   return (
     <div className="grid min-h-full place-items-center px-6 py-12">
-      <div className="w-full max-w-[420px] animate-fade-in">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="grid size-11 place-items-center rounded-[var(--radius-lg)] bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] ring-1 ring-[var(--color-signal)]/25">
-              <IconShield size={22} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-white)]">
-                {t("brand")}
-              </h1>
-              <p className="mt-1 text-sm text-[var(--color-fog)]">{t("setup.subtitle")}</p>
-            </div>
+      <div className="w-full max-w-[400px] animate-fade-in">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 grid size-14 place-items-center rounded-[var(--radius-lg)] bg-[var(--color-signal)] text-white shadow-[var(--shadow-md)]">
+            <IconShield size={26} />
           </div>
-          <LanguageSwitch />
+          <h1 className="text-[1.75rem] font-semibold tracking-tight text-[var(--color-white)]">
+            {t("brand")}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-fog)]">{t("setup.subtitle")}</p>
         </div>
 
-        <form onSubmit={onSubmit} className="glass-panel space-y-3 rounded-[var(--radius-xl)] p-6">
+        <form onSubmit={onSubmit} className="ui-card space-y-3 p-6">
           <Field label={t("setup.key")}>
             <Input
               className="font-mono"
@@ -112,10 +107,14 @@ export function SetupPage() {
             />
           </Field>
           {error && <Alert tone="warn">{error}</Alert>}
-          <Button type="submit" disabled={pending} className="mt-2 w-full">
+          <Button type="submit" disabled={pending} className="w-full">
             {pending ? t("common.loading") : t("setup.submit")}
           </Button>
         </form>
+
+        <div className="mt-5 flex justify-center">
+          <LanguageSwitch />
+        </div>
       </div>
     </div>
   );

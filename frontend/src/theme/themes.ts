@@ -1,371 +1,263 @@
-export type ThemeId =
-  | "slate"
-  | "ocean"
-  | "aurora"
-  | "ember"
-  | "forest"
-  | "graphite"
-  | "crimson"
-  | "daylight";
+export type Appearance = "light" | "dark" | "auto" | "hacker";
+export type ResolvedMode = "light" | "dark" | "hacker";
 
-export type ThemeDef = {
-  id: ThemeId;
-  /** i18n key under theme.* */
+export type AccentId =
+  | "blue"
+  | "purple"
+  | "pink"
+  | "red"
+  | "orange"
+  | "yellow"
+  | "green"
+  | "graphite";
+
+export type AccentDef = {
+  id: AccentId;
+  /** i18n key under theme.accent.* */
   nameKey: string;
-  mode: "dark" | "light";
-  /** accent, surface, bg for picker preview */
-  swatches: [string, string, string];
+  swatch: string;
   vars: Record<string, string>;
 };
 
-const STORAGE_KEY = "bg.theme";
+const APPEARANCE_KEY = "bg.appearance";
+const ACCENT_KEY = "bg.accent";
 
-export const THEMES: ThemeDef[] = [
+export const ACCENTS: AccentDef[] = [
   {
-    id: "slate",
-    nameKey: "theme.slate",
-    mode: "dark",
-    swatches: ["#2aa391", "#121a22", "#090d12"],
+    id: "blue",
+    nameKey: "theme.accent.blue",
+    swatch: "#0a84ff",
     vars: {
-      "--color-bg": "#090d12",
-      "--color-bg-elevated": "#0d1319",
-      "--color-ink": "#0c1218",
-      "--color-panel": "#121a22",
-      "--color-panel-2": "#18232e",
-      "--color-panel-3": "#1e2b38",
-      "--color-surface": "#141c25",
-      "--color-surface-hover": "#1a2430",
-      "--color-line": "#243140",
-      "--color-line-strong": "#334556",
-      "--color-fog": "#8b9faf",
-      "--color-muted": "#6b7f90",
-      "--color-snow": "#e8eef4",
-      "--color-white": "#f5f8fb",
-      "--color-signal": "#2aa391",
-      "--color-signal-2": "#3bc4ae",
-      "--color-signal-dim": "rgba(42, 163, 145, 0.14)",
-      "--color-success": "#3dba7e",
-      "--color-success-dim": "rgba(61, 186, 126, 0.14)",
-      "--color-warn": "#d4a017",
-      "--color-warn-dim": "rgba(212, 160, 23, 0.14)",
-      "--color-danger": "#e05555",
-      "--color-danger-dim": "rgba(224, 85, 85, 0.14)",
-      "--color-info": "#4a9ede",
-      "--color-info-dim": "rgba(74, 158, 222, 0.14)",
-      "--theme-glow-a": "rgba(42, 163, 145, 0.09)",
-      "--theme-glow-b": "rgba(74, 158, 222, 0.07)",
-      "--theme-bg-top": "#0a0e13",
-      "--theme-bg-bottom": "#080b10",
-      "--theme-selection": "rgba(42, 163, 145, 0.35)",
-      "--shadow-glow": "0 0 0 1px rgba(42, 163, 145, 0.18), 0 8px 28px rgba(0, 0, 0, 0.4)",
+      "--color-signal": "#0a84ff",
+      "--color-signal-2": "#0a84ff",
+      "--color-signal-dim": "rgba(10, 132, 255, 0.13)",
     },
   },
   {
-    id: "ocean",
-    nameKey: "theme.ocean",
-    mode: "dark",
-    swatches: ["#3b82f6", "#0f172a", "#020617"],
+    id: "purple",
+    nameKey: "theme.accent.purple",
+    swatch: "#bf5af2",
     vars: {
-      "--color-bg": "#020617",
-      "--color-bg-elevated": "#0b1220",
-      "--color-ink": "#0a1220",
-      "--color-panel": "#0f172a",
-      "--color-panel-2": "#152238",
-      "--color-panel-3": "#1c2d48",
-      "--color-surface": "#132033",
-      "--color-surface-hover": "#1a2b42",
-      "--color-line": "#243b5a",
-      "--color-line-strong": "#35557a",
-      "--color-fog": "#93a9c4",
-      "--color-muted": "#6b829e",
-      "--color-snow": "#e8eef8",
-      "--color-white": "#f4f7fc",
-      "--color-signal": "#3b82f6",
-      "--color-signal-2": "#60a5fa",
-      "--color-signal-dim": "rgba(59, 130, 246, 0.16)",
-      "--color-success": "#34d399",
-      "--color-success-dim": "rgba(52, 211, 153, 0.14)",
-      "--color-warn": "#f59e0b",
-      "--color-warn-dim": "rgba(245, 158, 11, 0.14)",
-      "--color-danger": "#f87171",
-      "--color-danger-dim": "rgba(248, 113, 113, 0.14)",
-      "--color-info": "#38bdf8",
-      "--color-info-dim": "rgba(56, 189, 248, 0.14)",
-      "--theme-glow-a": "rgba(59, 130, 246, 0.12)",
-      "--theme-glow-b": "rgba(56, 189, 248, 0.08)",
-      "--theme-bg-top": "#020617",
-      "--theme-bg-bottom": "#01040c",
-      "--theme-selection": "rgba(59, 130, 246, 0.35)",
-      "--shadow-glow": "0 0 0 1px rgba(59, 130, 246, 0.2), 0 8px 28px rgba(0, 0, 0, 0.45)",
+      "--color-signal": "#bf5af2",
+      "--color-signal-2": "#bf5af2",
+      "--color-signal-dim": "rgba(191, 90, 242, 0.14)",
     },
   },
   {
-    id: "aurora",
-    nameKey: "theme.aurora",
-    mode: "dark",
-    swatches: ["#22d3ee", "#0c191c", "#061012"],
+    id: "pink",
+    nameKey: "theme.accent.pink",
+    swatch: "#ff375f",
     vars: {
-      "--color-bg": "#061012",
-      "--color-bg-elevated": "#0a171a",
-      "--color-ink": "#081416",
-      "--color-panel": "#0c191c",
-      "--color-panel-2": "#122428",
-      "--color-panel-3": "#183035",
-      "--color-surface": "#102022",
-      "--color-surface-hover": "#163034",
-      "--color-line": "#1f3a40",
-      "--color-line-strong": "#2d535b",
-      "--color-fog": "#8fb6bc",
-      "--color-muted": "#6a9096",
-      "--color-snow": "#e6f4f5",
-      "--color-white": "#f2fafb",
-      "--color-signal": "#06b6d4",
-      "--color-signal-2": "#22d3ee",
-      "--color-signal-dim": "rgba(6, 182, 212, 0.16)",
-      "--color-success": "#4ade80",
-      "--color-success-dim": "rgba(74, 222, 128, 0.14)",
-      "--color-warn": "#fbbf24",
-      "--color-warn-dim": "rgba(251, 191, 36, 0.14)",
-      "--color-danger": "#fb7185",
-      "--color-danger-dim": "rgba(251, 113, 133, 0.14)",
-      "--color-info": "#38bdf8",
-      "--color-info-dim": "rgba(56, 189, 248, 0.14)",
-      "--theme-glow-a": "rgba(6, 182, 212, 0.12)",
-      "--theme-glow-b": "rgba(74, 222, 128, 0.07)",
-      "--theme-bg-top": "#061012",
-      "--theme-bg-bottom": "#040c0e",
-      "--theme-selection": "rgba(6, 182, 212, 0.35)",
-      "--shadow-glow": "0 0 0 1px rgba(6, 182, 212, 0.2), 0 8px 28px rgba(0, 0, 0, 0.4)",
+      "--color-signal": "#ff375f",
+      "--color-signal-2": "#ff375f",
+      "--color-signal-dim": "rgba(255, 55, 95, 0.13)",
     },
   },
   {
-    id: "ember",
-    nameKey: "theme.ember",
-    mode: "dark",
-    swatches: ["#f59e0b", "#1a1410", "#120e0b"],
+    id: "red",
+    nameKey: "theme.accent.red",
+    swatch: "#ff453a",
     vars: {
-      "--color-bg": "#120e0b",
-      "--color-bg-elevated": "#1a1410",
-      "--color-ink": "#16110d",
-      "--color-panel": "#1c1612",
-      "--color-panel-2": "#271e18",
-      "--color-panel-3": "#32271f",
-      "--color-surface": "#221b16",
-      "--color-surface-hover": "#2c231c",
-      "--color-line": "#3a2e24",
-      "--color-line-strong": "#534234",
-      "--color-fog": "#b7a08a",
-      "--color-muted": "#8f7a66",
-      "--color-snow": "#f3ebe3",
-      "--color-white": "#faf6f1",
-      "--color-signal": "#ea8c1a",
-      "--color-signal-2": "#f5a524",
-      "--color-signal-dim": "rgba(234, 140, 26, 0.16)",
-      "--color-success": "#65a30d",
-      "--color-success-dim": "rgba(101, 163, 13, 0.14)",
-      "--color-warn": "#fbbf24",
-      "--color-warn-dim": "rgba(251, 191, 36, 0.16)",
-      "--color-danger": "#ef4444",
-      "--color-danger-dim": "rgba(239, 68, 68, 0.14)",
-      "--color-info": "#fb923c",
-      "--color-info-dim": "rgba(251, 146, 60, 0.14)",
-      "--theme-glow-a": "rgba(234, 140, 26, 0.12)",
-      "--theme-glow-b": "rgba(239, 68, 68, 0.06)",
-      "--theme-bg-top": "#16110d",
-      "--theme-bg-bottom": "#0e0b08",
-      "--theme-selection": "rgba(234, 140, 26, 0.35)",
-      "--shadow-glow": "0 0 0 1px rgba(234, 140, 26, 0.22), 0 8px 28px rgba(0, 0, 0, 0.45)",
+      "--color-signal": "#ff453a",
+      "--color-signal-2": "#ff453a",
+      "--color-signal-dim": "rgba(255, 69, 58, 0.13)",
     },
   },
   {
-    id: "forest",
-    nameKey: "theme.forest",
-    mode: "dark",
-    swatches: ["#4ade80", "#101813", "#0a100c"],
+    id: "orange",
+    nameKey: "theme.accent.orange",
+    swatch: "#ff9500",
     vars: {
-      "--color-bg": "#0a100c",
-      "--color-bg-elevated": "#101813",
-      "--color-ink": "#0d1410",
-      "--color-panel": "#121a15",
-      "--color-panel-2": "#1a261e",
-      "--color-panel-3": "#223228",
-      "--color-surface": "#162019",
-      "--color-surface-hover": "#1e2b22",
-      "--color-line": "#2a3b30",
-      "--color-line-strong": "#3c5444",
-      "--color-fog": "#9ab5a4",
-      "--color-muted": "#738f7e",
-      "--color-snow": "#e8f2eb",
-      "--color-white": "#f3faf5",
-      "--color-signal": "#22c55e",
-      "--color-signal-2": "#4ade80",
-      "--color-signal-dim": "rgba(34, 197, 94, 0.15)",
-      "--color-success": "#86efac",
-      "--color-success-dim": "rgba(134, 239, 172, 0.14)",
-      "--color-warn": "#eab308",
-      "--color-warn-dim": "rgba(234, 179, 8, 0.14)",
-      "--color-danger": "#f87171",
-      "--color-danger-dim": "rgba(248, 113, 113, 0.14)",
-      "--color-info": "#5eead4",
-      "--color-info-dim": "rgba(94, 234, 212, 0.14)",
-      "--theme-glow-a": "rgba(34, 197, 94, 0.11)",
-      "--theme-glow-b": "rgba(94, 234, 212, 0.06)",
-      "--theme-bg-top": "#0c1410",
-      "--theme-bg-bottom": "#070c09",
-      "--theme-selection": "rgba(34, 197, 94, 0.35)",
-      "--shadow-glow": "0 0 0 1px rgba(34, 197, 94, 0.2), 0 8px 28px rgba(0, 0, 0, 0.4)",
+      "--color-signal": "#ff9500",
+      "--color-signal-2": "#ff9500",
+      "--color-signal-dim": "rgba(255, 149, 0, 0.15)",
+    },
+  },
+  {
+    id: "yellow",
+    nameKey: "theme.accent.yellow",
+    swatch: "#ffcc00",
+    vars: {
+      "--color-signal": "#ffcc00",
+      // Pure yellow fails as label/icon text on both light and dark — darken for legibility.
+      "--color-signal-2": "#a17400",
+      "--color-signal-dim": "rgba(255, 204, 0, 0.18)",
+    },
+  },
+  {
+    id: "green",
+    nameKey: "theme.accent.green",
+    swatch: "#30d158",
+    vars: {
+      "--color-signal": "#30d158",
+      "--color-signal-2": "#1f8a3e",
+      "--color-signal-dim": "rgba(48, 209, 88, 0.14)",
     },
   },
   {
     id: "graphite",
-    nameKey: "theme.graphite",
-    mode: "dark",
-    swatches: ["#a3a3a3", "#171717", "#0a0a0a"],
+    nameKey: "theme.accent.graphite",
+    swatch: "#8e8e93",
     vars: {
-      "--color-bg": "#0a0a0a",
-      "--color-bg-elevated": "#111111",
-      "--color-ink": "#0f0f0f",
-      "--color-panel": "#141414",
-      "--color-panel-2": "#1c1c1c",
-      "--color-panel-3": "#262626",
-      "--color-surface": "#181818",
-      "--color-surface-hover": "#222222",
-      "--color-line": "#2a2a2a",
-      "--color-line-strong": "#3f3f3f",
-      "--color-fog": "#a3a3a3",
-      "--color-muted": "#737373",
-      "--color-snow": "#f5f5f5",
-      "--color-white": "#fafafa",
-      "--color-signal": "#d4d4d4",
-      "--color-signal-2": "#e5e5e5",
-      "--color-signal-dim": "rgba(212, 212, 212, 0.12)",
-      "--color-success": "#86efac",
-      "--color-success-dim": "rgba(134, 239, 172, 0.12)",
-      "--color-warn": "#fbbf24",
-      "--color-warn-dim": "rgba(251, 191, 36, 0.12)",
-      "--color-danger": "#f87171",
-      "--color-danger-dim": "rgba(248, 113, 113, 0.12)",
-      "--color-info": "#a3a3a3",
-      "--color-info-dim": "rgba(163, 163, 163, 0.12)",
-      "--theme-glow-a": "rgba(255, 255, 255, 0.04)",
-      "--theme-glow-b": "rgba(255, 255, 255, 0.02)",
-      "--theme-bg-top": "#0c0c0c",
-      "--theme-bg-bottom": "#050505",
-      "--theme-selection": "rgba(212, 212, 212, 0.28)",
-      "--shadow-glow": "0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 28px rgba(0, 0, 0, 0.5)",
-    },
-  },
-  {
-    id: "crimson",
-    nameKey: "theme.crimson",
-    mode: "dark",
-    swatches: ["#f43f5e", "#1a1014", "#100a0d"],
-    vars: {
-      "--color-bg": "#100a0d",
-      "--color-bg-elevated": "#180f14",
-      "--color-ink": "#140c10",
-      "--color-panel": "#1a1116",
-      "--color-panel-2": "#261820",
-      "--color-panel-3": "#322029",
-      "--color-surface": "#20141a",
-      "--color-surface-hover": "#2a1b23",
-      "--color-line": "#3a2430",
-      "--color-line-strong": "#533542",
-      "--color-fog": "#c4a0ad",
-      "--color-muted": "#94707e",
-      "--color-snow": "#f8eef2",
-      "--color-white": "#fcf6f8",
-      "--color-signal": "#e11d48",
-      "--color-signal-2": "#fb7185",
-      "--color-signal-dim": "rgba(225, 29, 72, 0.16)",
-      "--color-success": "#4ade80",
-      "--color-success-dim": "rgba(74, 222, 128, 0.14)",
-      "--color-warn": "#fbbf24",
-      "--color-warn-dim": "rgba(251, 191, 36, 0.14)",
-      "--color-danger": "#fb7185",
-      "--color-danger-dim": "rgba(251, 113, 133, 0.16)",
-      "--color-info": "#f472b6",
-      "--color-info-dim": "rgba(244, 114, 182, 0.14)",
-      "--theme-glow-a": "rgba(225, 29, 72, 0.12)",
-      "--theme-glow-b": "rgba(244, 114, 182, 0.06)",
-      "--theme-bg-top": "#140c10",
-      "--theme-bg-bottom": "#0c0709",
-      "--theme-selection": "rgba(225, 29, 72, 0.32)",
-      "--shadow-glow": "0 0 0 1px rgba(225, 29, 72, 0.22), 0 8px 28px rgba(0, 0, 0, 0.45)",
-    },
-  },
-  {
-    id: "daylight",
-    nameKey: "theme.daylight",
-    mode: "light",
-    swatches: ["#0d9488", "#ffffff", "#f1f5f9"],
-    vars: {
-      "--color-bg": "#f1f5f9",
-      "--color-bg-elevated": "#ffffff",
-      "--color-ink": "#ffffff",
-      "--color-panel": "#ffffff",
-      "--color-panel-2": "#f8fafc",
-      "--color-panel-3": "#eef2f7",
-      "--color-surface": "#f8fafc",
-      "--color-surface-hover": "#eef2f7",
-      "--color-line": "#d8e0ea",
-      "--color-line-strong": "#b8c5d4",
-      "--color-fog": "#5b6b7c",
-      "--color-muted": "#7a8a9a",
-      "--color-snow": "#0f172a",
-      "--color-white": "#020617",
-      "--color-signal": "#0d9488",
-      "--color-signal-2": "#14b8a6",
-      "--color-signal-dim": "rgba(13, 148, 136, 0.12)",
-      "--color-success": "#16a34a",
-      "--color-success-dim": "rgba(22, 163, 74, 0.12)",
-      "--color-warn": "#d97706",
-      "--color-warn-dim": "rgba(217, 119, 6, 0.12)",
-      "--color-danger": "#dc2626",
-      "--color-danger-dim": "rgba(220, 38, 38, 0.12)",
-      "--color-info": "#0284c7",
-      "--color-info-dim": "rgba(2, 132, 199, 0.12)",
-      "--theme-glow-a": "rgba(13, 148, 136, 0.08)",
-      "--theme-glow-b": "rgba(2, 132, 199, 0.06)",
-      "--theme-bg-top": "#f8fafc",
-      "--theme-bg-bottom": "#e8eef5",
-      "--theme-selection": "rgba(13, 148, 136, 0.25)",
-      "--shadow-sm": "0 1px 2px rgba(15, 23, 42, 0.06)",
-      "--shadow-md": "0 10px 30px rgba(15, 23, 42, 0.08)",
-      "--shadow-glow": "0 0 0 1px rgba(13, 148, 136, 0.15), 0 10px 28px rgba(15, 23, 42, 0.08)",
+      "--color-signal": "#8e8e93",
+      "--color-signal-2": "#6e6e73",
+      "--color-signal-dim": "rgba(142, 142, 147, 0.16)",
     },
   },
 ];
 
-export function getTheme(id: string | null | undefined): ThemeDef {
-  return THEMES.find((t) => t.id === id) ?? THEMES[0]!;
+const LIGHT_VARS: Record<string, string> = {
+  "--color-bg": "#f5f5f7",
+  "--color-bg-elevated": "#ffffff",
+  "--color-ink": "#ffffff",
+  "--color-panel": "#ffffff",
+  "--color-panel-2": "#f5f5f7",
+  "--color-panel-3": "#ebebf0",
+  "--color-surface": "#ffffff",
+  "--color-surface-hover": "#f0f0f3",
+  "--color-line": "rgba(0, 0, 0, 0.09)",
+  "--color-line-strong": "rgba(0, 0, 0, 0.16)",
+  "--color-fog": "#6e6e73",
+  "--color-muted": "#8e8e93",
+  "--color-snow": "#1d1d1f",
+  "--color-white": "#000000",
+  "--color-success": "#248a3d",
+  "--color-success-dim": "rgba(52, 199, 89, 0.14)",
+  "--color-warn": "#b25000",
+  "--color-warn-dim": "rgba(255, 149, 0, 0.14)",
+  "--color-danger": "#d70015",
+  "--color-danger-dim": "rgba(255, 59, 48, 0.13)",
+  "--color-info": "#0a84ff",
+  "--color-info-dim": "rgba(10, 132, 255, 0.13)",
+  "--shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03)",
+  "--shadow-md": "0 16px 32px rgba(0, 0, 0, 0.09), 0 2px 8px rgba(0, 0, 0, 0.05)",
+  "--theme-selection": "rgba(10, 132, 255, 0.22)",
+};
+
+const DARK_VARS: Record<string, string> = {
+  "--color-bg": "#000000",
+  "--color-bg-elevated": "#1c1c1e",
+  "--color-ink": "#000000",
+  "--color-panel": "#1c1c1e",
+  "--color-panel-2": "#2c2c2e",
+  "--color-panel-3": "#3a3a3c",
+  "--color-surface": "#1c1c1e",
+  "--color-surface-hover": "#2c2c2e",
+  "--color-line": "rgba(255, 255, 255, 0.1)",
+  "--color-line-strong": "rgba(255, 255, 255, 0.18)",
+  "--color-fog": "#98989d",
+  "--color-muted": "#8e8e93",
+  "--color-snow": "#f5f5f7",
+  "--color-white": "#ffffff",
+  "--color-success": "#30d158",
+  "--color-success-dim": "rgba(48, 209, 88, 0.16)",
+  "--color-warn": "#ff9f0a",
+  "--color-warn-dim": "rgba(255, 159, 10, 0.16)",
+  "--color-danger": "#ff453a",
+  "--color-danger-dim": "rgba(255, 69, 58, 0.16)",
+  "--color-info": "#0a84ff",
+  "--color-info-dim": "rgba(10, 132, 255, 0.16)",
+  "--shadow-sm": "0 0 0 1px rgba(255, 255, 255, 0.05)",
+  "--shadow-md": "0 20px 40px rgba(0, 0, 0, 0.55), 0 2px 10px rgba(0, 0, 0, 0.4)",
+  "--theme-selection": "rgba(10, 132, 255, 0.35)",
+};
+
+const HACKER_VARS: Record<string, string> = {
+  "--color-bg": "#04060a",
+  "--color-bg-elevated": "#070b0f",
+  "--color-ink": "#04060a",
+  "--color-panel": "#070b0f",
+  "--color-panel-2": "#0b1117",
+  "--color-panel-3": "#101922",
+  "--color-surface": "#080d12",
+  "--color-surface-hover": "#0d141b",
+  "--color-line": "rgba(51, 255, 153, 0.18)",
+  "--color-line-strong": "rgba(51, 255, 153, 0.34)",
+  "--color-fog": "#7fdba0",
+  "--color-muted": "#4f8f68",
+  "--color-snow": "#baffcf",
+  "--color-white": "#eafff0",
+  "--color-signal": "#33ff99",
+  "--color-signal-2": "#33ff99",
+  "--color-signal-dim": "rgba(51, 255, 153, 0.16)",
+  "--color-success": "#33ff99",
+  "--color-success-dim": "rgba(51, 255, 153, 0.16)",
+  "--color-warn": "#ffe066",
+  "--color-warn-dim": "rgba(255, 224, 102, 0.16)",
+  "--color-danger": "#ff5c5c",
+  "--color-danger-dim": "rgba(255, 92, 92, 0.16)",
+  "--color-info": "#5ce1ff",
+  "--color-info-dim": "rgba(92, 225, 255, 0.16)",
+  "--shadow-sm": "0 0 0 1px rgba(51, 255, 153, 0.12)",
+  "--shadow-md": "0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(51, 255, 153, 0.08)",
+  "--theme-selection": "rgba(51, 255, 153, 0.35)",
+};
+
+export function getAccent(id: string | null | undefined): AccentDef {
+  return ACCENTS.find((a) => a.id === id) ?? ACCENTS[0]!;
 }
 
-export function readStoredThemeId(): ThemeId {
+export function readStoredAppearance(): Appearance {
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    if (v && THEMES.some((t) => t.id === v)) return v as ThemeId;
+    const v = localStorage.getItem(APPEARANCE_KEY);
+    if (v === "light" || v === "dark" || v === "auto" || v === "hacker") return v;
   } catch {
     /* ignore */
   }
-  return "slate";
+  return "auto";
 }
 
-export function storeThemeId(id: ThemeId) {
+export function storeAppearance(a: Appearance) {
   try {
-    localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(APPEARANCE_KEY, a);
   } catch {
     /* ignore */
   }
 }
 
-/** Apply theme CSS variables before React paint (also used by provider). */
-export function applyTheme(id: ThemeId) {
-  const theme = getTheme(id);
+export function readStoredAccent(): AccentId {
+  try {
+    const v = localStorage.getItem(ACCENT_KEY);
+    if (ACCENTS.some((a) => a.id === v)) return v as AccentId;
+  } catch {
+    /* ignore */
+  }
+  return "blue";
+}
+
+export function storeAccent(id: AccentId) {
+  try {
+    localStorage.setItem(ACCENT_KEY, id);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function systemPrefersDark(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+export function resolveMode(appearance: Appearance): ResolvedMode {
+  if (appearance === "hacker") return "hacker";
+  if (appearance === "auto") return systemPrefersDark() ? "dark" : "light";
+  return appearance;
+}
+
+/** Apply the resolved theme's CSS variables before React paint (also used by provider). */
+export function applyTheme(appearance: Appearance, accentId: AccentId) {
   const root = document.documentElement;
-  root.setAttribute("data-theme", theme.id);
-  root.setAttribute("data-mode", theme.mode);
-  for (const [key, value] of Object.entries(theme.vars)) {
+  const mode = resolveMode(appearance);
+  root.setAttribute("data-appearance", appearance);
+  root.setAttribute("data-mode", mode);
+  root.setAttribute("data-accent", accentId);
+
+  const base = mode === "light" ? LIGHT_VARS : mode === "dark" ? DARK_VARS : HACKER_VARS;
+  for (const [key, value] of Object.entries(base)) {
     root.style.setProperty(key, value);
+  }
+  if (mode !== "hacker") {
+    for (const [key, value] of Object.entries(getAccent(accentId).vars)) {
+      root.style.setProperty(key, value);
+    }
   }
 }

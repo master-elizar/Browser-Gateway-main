@@ -227,7 +227,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
                           onClick={() => setDraft((d) => ({ ...d, browser: b.id }))}
                           className={`rounded-[var(--radius-md)] border px-4 py-4 text-left transition ${
                             selected
-                              ? "border-[var(--color-signal)] bg-[var(--color-signal-dim)] shadow-[var(--shadow-glow)]"
+                              ? "border-[var(--color-signal)] bg-[var(--color-signal-dim)]"
                               : "border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-line-strong)]"
                           }`}
                         >

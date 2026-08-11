@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useMotion } from "../motion/MotionContext";
+import { useTheme } from "../theme/ThemeContext";
 
 type Particle = {
   x: number;
@@ -32,15 +33,18 @@ function adaptiveCount(pref: number, tier: PerfTier, w: number, h: number): numb
 }
 
 /**
- * Ambient particle field with adaptive cost for small / weak displays.
- * Lite tier skips O(n²) links and radial glows; pauses when the tab is hidden.
+ * Ambient particle field, exclusive to Hacker mode (Light/Dark/Auto stay flat, per Apple's
+ * restraint). Adaptive cost for small / weak displays: lite tier skips O(n²) links and radial
+ * glows; pauses when the tab is hidden.
  */
 export function AmbientParticles() {
   const { motionEnabled, particleCount } = useMotion();
+  const { isHacker } = useTheme();
+  const active = motionEnabled && isHacker;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!motionEnabled) return;
+    if (!active) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d", { alpha: true });
@@ -52,8 +56,8 @@ export function AmbientParticles() {
     let h = 0;
     let tier: PerfTier = "full";
     let dpr = 1;
-    let color = "#3bc4ae";
-    let color2 = "#2aa391";
+    let color = "#33ff99";
+    let color2 = "#33ff99";
     let lastFrame = 0;
     let hidden = document.hidden;
     let linkDist2 = 0;
@@ -66,8 +70,8 @@ export function AmbientParticles() {
       color =
         styles.getPropertyValue("--color-signal-2").trim() ||
         styles.getPropertyValue("--color-signal").trim() ||
-        "#3bc4ae";
-      color2 = styles.getPropertyValue("--color-signal").trim() || "#2aa391";
+        "#33ff99";
+      color2 = styles.getPropertyValue("--color-signal").trim() || "#33ff99";
     };
 
     const spawn = (randomY: boolean): Particle => ({
@@ -195,9 +199,9 @@ export function AmbientParticles() {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [motionEnabled, particleCount]);
+  }, [active, particleCount]);
 
-  if (!motionEnabled) return null;
+  if (!active) return null;
 
   return (
     <canvas

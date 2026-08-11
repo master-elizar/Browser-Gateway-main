@@ -436,25 +436,34 @@
     "passwordError": "Could not change password"
   },
   "theme": {
-    "title": "Color theme",
-    "subtitle": "Choose a palette. Preference is saved in this browser.",
+    "title": "Appearance",
+    "subtitle": "Pick a light, dark, or automatic look, then an accent color. Saved in this browser.",
     "active": "Active",
-    "modeDark": "Dark",
-    "modeLight": "Light",
-    "slate": "Slate Teal",
-    "ocean": "Ocean Blue",
-    "aurora": "Aurora Cyan",
-    "ember": "Ember Amber",
-    "forest": "Forest Green",
-    "graphite": "Graphite",
-    "crimson": "Crimson",
-    "daylight": "Daylight"
+    "appearance": "Appearance",
+    "mode": {
+      "light": "Light",
+      "dark": "Dark",
+      "auto": "Auto"
+    },
+    "accent": {
+      "blue": "Blue",
+      "purple": "Purple",
+      "pink": "Pink",
+      "red": "Red",
+      "orange": "Orange",
+      "yellow": "Yellow",
+      "green": "Green",
+      "graphite": "Graphite"
+    },
+    "hacker": "Hacker mode",
+    "hackerHint": "A terminal-green, monospace look with a live signal field — just for fun."
   },
   "motion": {
     "title": "Motion & effects",
-    "subtitle": "Ambient particles, glowing buttons, and page transitions.",
+    "subtitle": "Page transitions and interface motion.",
     "enable": "Enable animations",
-    "hint": "Floating particles, soft button glow, and route transitions. Saved in this browser.",
+    "hint": "Route transitions and interactive feedback. Saved in this browser.",
+    "particlesHackerOnly": "Particle field is part of Hacker mode — switch to it above to preview and tune it.",
     "particles": "Particle density",
     "particlesHint": "Preferred count. On small screens the UI automatically lowers density, skips link lines, and runs at ~30fps.",
     "presetLow": "Low",

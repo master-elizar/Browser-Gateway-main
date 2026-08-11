@@ -168,10 +168,7 @@ export function SessionsPage() {
                     <Badge tone="neutral">{s.browser || "chromium"}</Badge>
                   </td>
                   <td>
-                    <Badge tone={statusTone(s.status)}>
-                      <span className="size-1.5 rounded-full bg-current opacity-80" />
-                      {s.status}
-                    </Badge>
+                    <Badge tone={statusTone(s.status)}>{s.status}</Badge>
                   </td>
                   <td className="text-[var(--color-fog)]">
                     {s.startedAt || s.createdAt

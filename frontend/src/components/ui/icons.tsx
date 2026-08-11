@@ -163,6 +163,15 @@ export function IconChevron(p: IconProps) {
   );
 }
 
+export function IconTerminal(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M7 9l3 3-3 3M12 15h5" />
+    </svg>
+  );
+}
+
 export function IconWrap({ children, title }: { children: ReactNode; title?: string }) {
   return (
     <span className="inline-flex shrink-0" title={title} aria-hidden={title ? undefined : true}>

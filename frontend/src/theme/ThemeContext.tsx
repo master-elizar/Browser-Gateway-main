@@ -2,55 +2,87 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import {
+  ACCENTS,
   applyTheme,
-  readStoredThemeId,
-  storeThemeId,
-  THEMES,
-  type ThemeDef,
-  type ThemeId,
+  readStoredAccent,
+  readStoredAppearance,
+  resolveMode,
+  storeAccent,
+  storeAppearance,
+  type AccentDef,
+  type AccentId,
+  type Appearance,
+  type ResolvedMode,
 } from "./themes";
 
 type ThemeCtx = {
-  themeId: ThemeId;
-  theme: ThemeDef;
-  themes: ThemeDef[];
-  setThemeId: (id: ThemeId) => void;
+  appearance: Appearance;
+  accent: AccentId;
+  accentDef: AccentDef;
+  accents: AccentDef[];
+  mode: ResolvedMode;
+  isHacker: boolean;
+  setAppearance: (a: Appearance) => void;
+  setAccent: (id: AccentId) => void;
 };
 
 const Ctx = createContext<ThemeCtx | null>(null);
 
 // Avoid FOUC on first paint
-applyTheme(readStoredThemeId());
+applyTheme(readStoredAppearance(), readStoredAccent());
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [themeId, setThemeIdState] = useState<ThemeId>(() => readStoredThemeId());
+  const [appearance, setAppearanceState] = useState<Appearance>(() => readStoredAppearance());
+  const [accent, setAccentState] = useState<AccentId>(() => readStoredAccent());
 
-  const setThemeId = useCallback((id: ThemeId) => {
-    applyTheme(id);
-    storeThemeId(id);
-    setThemeIdState(id);
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      themeId,
-      theme: getThemeSafe(themeId),
-      themes: THEMES,
-      setThemeId,
-    }),
-    [themeId, setThemeId],
+  const setAppearance = useCallback(
+    (a: Appearance) => {
+      applyTheme(a, accent);
+      storeAppearance(a);
+      setAppearanceState(a);
+    },
+    [accent],
   );
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
-}
+  const setAccent = useCallback(
+    (id: AccentId) => {
+      applyTheme(appearance, id);
+      storeAccent(id);
+      setAccentState(id);
+    },
+    [appearance],
+  );
 
-function getThemeSafe(id: ThemeId): ThemeDef {
-  return THEMES.find((t) => t.id === id) ?? THEMES[0]!;
+  // Live-follow the OS scheme while "auto" is selected.
+  useEffect(() => {
+    if (appearance !== "auto") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyTheme("auto", accent);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [appearance, accent]);
+
+  const value = useMemo<ThemeCtx>(() => {
+    const mode = resolveMode(appearance);
+    return {
+      appearance,
+      accent,
+      accentDef: ACCENTS.find((a) => a.id === accent) ?? ACCENTS[0]!,
+      accents: ACCENTS,
+      mode,
+      isHacker: mode === "hacker",
+      setAppearance,
+      setAccent,
+    };
+  }, [appearance, accent, setAppearance, setAccent]);
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 export function useTheme() {

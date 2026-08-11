@@ -27,7 +27,7 @@ export function LoginPage() {
       .catch(() => undefined);
     void api
       .version()
-      .then((v) => setVersion(`v${v.version} · stage ${v.stage}`))
+      .then((v) => setVersion(`v${v.version}`))
       .catch(() => setVersion(""));
   }, []);
 
@@ -52,27 +52,20 @@ export function LoginPage() {
 
   return (
     <div className="grid min-h-full place-items-center px-6 py-12">
-      <div className="w-full max-w-[420px] animate-fade-in">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="grid size-11 place-items-center rounded-[var(--radius-lg)] bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] ring-1 ring-[var(--color-signal)]/25">
-              <IconSessions size={22} />
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-white)]">
-                {t("brand")}
-              </h1>
-              <p className="mt-1 text-sm text-[var(--color-fog)]">{t("tagline")}</p>
-              {version && (
-                <p className="mt-2 font-mono text-[11px] text-[var(--color-signal-2)]">{version}</p>
-              )}
-            </div>
+      <div className="w-full max-w-[400px] animate-fade-in">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <div className="mb-4 grid size-14 place-items-center rounded-[var(--radius-lg)] bg-[var(--color-signal)] text-white shadow-[var(--shadow-md)]">
+            <IconSessions size={26} />
           </div>
-          <LanguageSwitch />
+          <h1 className="text-[1.75rem] font-semibold tracking-tight text-[var(--color-white)]">
+            {t("brand")}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--color-fog)]">{t("tagline")}</p>
+          {version && <p className="mt-2 font-mono text-[11px] text-[var(--color-muted)]">{version}</p>}
         </div>
 
-        <form onSubmit={onSubmit} className="glass-panel rounded-[var(--radius-xl)] p-6">
-          <div className="mb-5 flex gap-1 rounded-[var(--radius-md)] bg-[var(--color-ink)]/70 p-1">
+        <form onSubmit={onSubmit} className="ui-card space-y-4 p-6">
+          <div className="flex gap-1 rounded-[var(--radius-md)] bg-[var(--color-panel-2)] p-1">
             <button
               type="button"
               className={tabClass(mode === "login")}
@@ -122,17 +115,17 @@ export function LoginPage() {
             </Field>
           </div>
 
-          {error && (
-            <div className="mt-4">
-              <Alert tone="warn">{error}</Alert>
-            </div>
-          )}
+          {error && <Alert tone="warn">{error}</Alert>}
 
-          <Button type="submit" disabled={pending} className="mt-5 w-full">
+          <Button type="submit" disabled={pending} className="w-full">
             {pending ? t("common.loading") : mode === "register" ? t("login.register") : t("login.submit")}
           </Button>
-          <p className="mt-3 text-xs leading-relaxed text-[var(--color-muted)]">{t("login.hint")}</p>
+          <p className="text-center text-xs leading-relaxed text-[var(--color-muted)]">{t("login.hint")}</p>
         </form>
+
+        <div className="mt-5 flex justify-center">
+          <LanguageSwitch />
+        </div>
       </div>
     </div>
   );
@@ -140,9 +133,9 @@ export function LoginPage() {
 
 function tabClass(active: boolean) {
   return [
-    "flex-1 rounded-[var(--radius-sm)] px-3 py-2 text-sm transition",
+    "flex-1 rounded-[calc(var(--radius-md)-4px)] px-3 py-1.5 text-sm font-medium transition",
     active
-      ? "bg-[var(--color-panel-2)] font-medium text-[var(--color-snow)] shadow-[var(--shadow-sm)]"
+      ? "bg-[var(--color-panel)] text-[var(--color-snow)] shadow-[var(--shadow-sm)]"
       : "text-[var(--color-fog)] hover:text-[var(--color-snow)]",
   ].join(" ");
 }

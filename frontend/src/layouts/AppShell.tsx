@@ -63,26 +63,21 @@ export function AppShell() {
 
   return (
     <div className="relative flex min-h-full">
-      <aside
-        className="glass-panel sticky top-0 z-20 flex h-screen w-[var(--sidebar-w)] shrink-0 flex-col border-r border-[var(--color-line)]"
-        style={{ borderRadius: 0, borderTop: 0, borderBottom: 0, borderLeft: 0 }}
-      >
-        <div className="border-b border-[var(--color-line)] px-5 py-5">
-          <div className="flex items-center gap-3">
-            <div className="grid size-9 place-items-center rounded-[var(--radius-md)] bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] ring-1 ring-[var(--color-signal)]/30">
-              <IconSessions size={18} />
+      <aside className="glass-panel sticky top-0 z-20 flex h-screen w-[var(--sidebar-w)] shrink-0 flex-col rounded-none border-y-0 border-l-0">
+        <div className="flex items-center gap-2.5 px-5 py-5">
+          <div className="grid size-8 place-items-center rounded-[var(--radius-sm)] bg-[var(--color-signal)] text-white">
+            <IconSessions size={16} />
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-snow)]">
+              {t("brand")}
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold tracking-tight text-[var(--color-white)]">
-                {t("brand")}
-              </div>
-              <div className="truncate text-[11px] text-[var(--color-muted)]">{t("tagline")}</div>
-            </div>
+            <div className="truncate text-[11px] text-[var(--color-muted)]">{t("tagline")}</div>
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
-          <div className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3">
+          <div className="mb-1 mt-2 px-3 text-[11px] font-medium text-[var(--color-muted)]">
             {t("nav.workspace")}
           </div>
           <NavLink to="/sessions" className={navClass} title={t("nav.sessions")}>
@@ -100,7 +95,7 @@ export function AppShell() {
 
           {isAdmin && (
             <>
-              <div className="mb-2 mt-5 px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">
+              <div className="mb-1 mt-5 px-3 text-[11px] font-medium text-[var(--color-muted)]">
                 {t("nav.admin")}
               </div>
               <NavLink to="/admin/users" className={navClass} title={t("nav.users")}>
@@ -123,19 +118,26 @@ export function AppShell() {
           )}
         </nav>
 
-        <div className="mt-auto border-t border-[var(--color-line)] p-3">
-          <div className="mb-2 rounded-[var(--radius-md)] bg-[var(--color-panel-2)]/70 px-3 py-2.5">
-            <div className="truncate text-sm font-medium text-[var(--color-snow)]">
-              {user?.displayName || user?.email}
+        <div className="mt-auto p-3">
+          <div className="mb-1 flex items-center gap-2.5 rounded-[var(--radius-md)] px-2.5 py-2 hover:bg-[var(--color-surface-hover)]">
+            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--color-panel-3)] text-xs font-semibold text-[var(--color-fog)]">
+              {(user?.displayName || user?.email || "?").slice(0, 1).toUpperCase()}
             </div>
-            <div className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-wider text-[var(--color-muted)]">
-              {user?.role}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-medium text-[var(--color-snow)]">
+                {user?.displayName || user?.email}
+              </div>
+              <div className="truncate text-[11px] text-[var(--color-muted)]">{user?.role}</div>
             </div>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              title={t("nav.logout")}
+              className="btn-icon shrink-0"
+            >
+              <IconLogout size={15} />
+            </button>
           </div>
-          <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => void logout()}>
-            <IconLogout size={16} />
-            {t("nav.logout")}
-          </Button>
         </div>
       </aside>
 
@@ -162,14 +164,8 @@ export function AppShell() {
           </div>
         )}
 
-        <header
-          className="app-topbar sticky top-0 z-20 flex h-[var(--topbar-h)] items-center justify-between gap-4 border-b border-[var(--color-line)] bg-[var(--color-bg)]/75 px-6 backdrop-blur-xl"
-        >
-          <div className="flex min-w-0 items-center gap-2 text-sm">
-            <span className="text-[var(--color-muted)]">{t("brand")}</span>
-            <span className="text-[var(--color-line-strong)]">/</span>
-            <span className="truncate font-medium text-[var(--color-snow)]">{crumb}</span>
-          </div>
+        <header className="app-topbar sticky top-0 z-20 flex h-[var(--topbar-h)] items-center justify-between gap-4 border-b border-[var(--color-line)] bg-[var(--color-bg)]/70 px-6 backdrop-blur-xl">
+          <div className="min-w-0 truncate text-[15px] font-semibold text-[var(--color-snow)]">{crumb}</div>
           <div className="flex items-center gap-3">
             <LanguageSwitch />
           </div>

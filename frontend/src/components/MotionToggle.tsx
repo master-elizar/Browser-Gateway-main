@@ -1,15 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { useMotion } from "../motion/MotionContext";
 import { PARTICLE_MAX, PARTICLE_MIN } from "../motion/prefs";
+import { useTheme } from "../theme/ThemeContext";
 import { Toggle } from "./ui";
 
 export function MotionToggle() {
   const { t } = useTranslation();
   const { motionEnabled, setMotionEnabled, particleCount, setParticleCount } = useMotion();
+  const { isHacker } = useTheme();
 
   return (
     <div className="space-y-3">
-      <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-ink)]/40 px-3 py-2">
+      <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2">
         <Toggle
           checked={motionEnabled}
           onChange={() => setMotionEnabled(!motionEnabled)}
@@ -18,8 +20,13 @@ export function MotionToggle() {
         />
       </div>
 
+      {!isHacker ? (
+        <p className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] px-4 py-3 text-xs text-[var(--color-muted)]">
+          {t("motion.particlesHackerOnly")}
+        </p>
+      ) : (
       <div
-        className={`rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-ink)]/40 px-4 py-3 transition ${
+        className={`rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] px-4 py-3 transition ${
           motionEnabled ? "opacity-100" : "opacity-45"
         }`}
       >
@@ -74,6 +81,7 @@ export function MotionToggle() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
