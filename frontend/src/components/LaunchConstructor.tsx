@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -120,7 +121,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
     if (i > 0) setStep(STEPS[i - 1]);
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button
         type="button"
@@ -380,6 +381,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
           </footer>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
