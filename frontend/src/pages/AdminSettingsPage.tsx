@@ -7,7 +7,6 @@ import { AdminTLSPanel } from "../components/AdminTLSHealthPanel";
 import { AdminUpdatesPanel } from "../components/AdminUpdatesPanel";
 import { ChangePasswordForm } from "../components/ChangePasswordForm";
 import { LanguageSwitch } from "../components/LanguageSwitch";
-import { ThemePicker } from "../components/ThemePicker";
 import { MotionToggle } from "../components/MotionToggle";
 import {
   Alert,
@@ -283,12 +282,6 @@ export function AdminSettingsPage() {
                 <CardHeader title={t("motion.title")} description={t("motion.subtitle")} />
                 <CardBody>
                   <MotionToggle />
-                </CardBody>
-              </Card>
-              <Card>
-                <CardHeader title={t("theme.title")} description={t("theme.subtitle")} />
-                <CardBody>
-                  <ThemePicker />
                 </CardBody>
               </Card>
               <form onSubmit={onSave} className="space-y-4">
