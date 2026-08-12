@@ -1,6 +1,6 @@
 {
   "brand": "Browser Gateway",
-  "tagline": "Remote Chromium as a service",
+  "tagline": "Remote Chromium sandbox",
   "nav": {
     "sessions": "Sessions",
     "history": "History",

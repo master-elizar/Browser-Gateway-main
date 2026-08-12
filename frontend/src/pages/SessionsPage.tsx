@@ -156,9 +156,11 @@ export function SessionsPage() {
             ) : (
               items.map((s) => (
                 <tr key={s.id}>
-                  <td>
-                    <div className="font-medium text-[var(--color-snow)]">{s.name || s.id}</div>
-                    <div className="mt-0.5 font-mono text-[10px] text-[var(--color-muted)]">
+                  <td className="max-w-0">
+                    <div className="truncate font-medium text-[var(--color-snow)]" title={s.name || s.id}>
+                      {s.name || s.id}
+                    </div>
+                    <div className="mt-0.5 truncate font-mono text-[10px] text-[var(--color-muted)]">
                       {s.id.slice(0, 8)}
                       {s.memoryMb ? ` · ${s.memoryMb}MB` : ""}
                       {s.cpus ? ` · ${s.cpus} CPU` : ""}

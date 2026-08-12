@@ -1,6 +1,6 @@
 {
   "brand": "Browser Gateway",
-  "tagline": "Удалённый Chromium как сервис",
+  "tagline": "Изолированный Chromium",
   "nav": {
     "sessions": "Сессии",
     "history": "История",

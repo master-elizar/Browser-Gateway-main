@@ -72,7 +72,7 @@ export function AppShell() {
             <div className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-snow)]">
               {t("brand")}
             </div>
-            <div className="truncate text-[11px] text-[var(--color-muted)]">{t("tagline")}</div>
+            <div className="text-[11px] text-[var(--color-muted)]">{t("tagline")}</div>
           </div>
         </div>
 
@@ -124,7 +124,10 @@ export function AppShell() {
               {(user?.displayName || user?.email || "?").slice(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-medium text-[var(--color-snow)]">
+              <div
+                className="truncate text-[13px] font-medium text-[var(--color-snow)]"
+                title={user?.displayName || user?.email}
+              >
                 {user?.displayName || user?.email}
               </div>
               <div className="truncate text-[11px] text-[var(--color-muted)]">{user?.role}</div>

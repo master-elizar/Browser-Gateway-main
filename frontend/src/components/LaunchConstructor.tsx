@@ -351,8 +351,8 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
                     [t("admin.dnsDohUrl"), summary.dnsDohUrl],
                   ].map(([k, v]) => (
                     <div key={String(k)} className="flex gap-4 px-4 py-2.5 text-xs">
-                      <dt className="w-36 shrink-0 text-[var(--color-muted)]">{k}</dt>
-                      <dd className="min-w-0 break-all font-mono text-[var(--color-snow)]">{v || "—"}</dd>
+                      <dt className="shrink-0 text-[var(--color-muted)]">{k}</dt>
+                      <dd className="min-w-0 flex-1 break-all font-mono text-[var(--color-snow)]">{v || "—"}</dd>
                     </div>
                   ))}
                 </dl>
