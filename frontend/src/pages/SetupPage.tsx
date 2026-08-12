@@ -5,7 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { Alert, Button, Field, Input, Skeleton } from "../components/ui";
-import { IconShield } from "../components/ui/icons";
+import { IconBrand } from "../components/ui/icons";
 
 export function SetupPage() {
   const { t } = useTranslation();
@@ -59,7 +59,7 @@ export function SetupPage() {
       <div className="w-full max-w-[400px] animate-fade-in">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 grid size-14 place-items-center rounded-[var(--radius-lg)] bg-[var(--color-signal)] text-white shadow-[var(--shadow-md)]">
-            <IconShield size={26} />
+            <IconBrand size={26} />
           </div>
           <h1 className="text-[1.75rem] font-semibold tracking-tight text-[var(--color-white)]">
             {t("brand")}

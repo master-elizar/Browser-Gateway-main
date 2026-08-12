@@ -16,6 +16,16 @@ function base({ size = 18, ...props }: IconProps) {
   };
 }
 
+export function IconBrand(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 2.6l7.2 2.6v5.3c0 4.9-3.1 8.6-7.2 9.9-4.1-1.3-7.2-5-7.2-9.9V5.2L12 2.6z" />
+      <rect x="8.4" y="8.3" width="7.2" height="6" rx="1.1" />
+      <path d="M8.4 10.6h7.2" />
+    </svg>
+  );
+}
+
 export function IconSessions(p: IconProps) {
   return (
     <svg {...base(p)}>

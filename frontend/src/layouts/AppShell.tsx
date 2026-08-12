@@ -9,6 +9,7 @@ import { Button } from "../components/ui";
 import {
   IconAccount,
   IconAudit,
+  IconBrand,
   IconLogout,
   IconSessions,
   IconSettings,
@@ -66,7 +67,7 @@ export function AppShell() {
       <aside className="glass-panel sticky top-0 z-20 flex h-screen w-[var(--sidebar-w)] shrink-0 flex-col rounded-none border-y-0 border-l-0">
         <div className="flex items-center gap-2.5 px-5 py-5">
           <div className="grid size-8 place-items-center rounded-[var(--radius-sm)] bg-[var(--color-signal)] text-white">
-            <IconSessions size={16} />
+            <IconBrand size={16} />
           </div>
           <div className="min-w-0">
             <div className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-snow)]">
