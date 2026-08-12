@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
+import { backoffMs } from "../lib/reconnect";
 
 type Props = {
   sessionId: string;
@@ -17,12 +18,107 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
 
   useEffect(() => {
     let cancelled = false;
+    let sigAttempt = 0;
+    let ctrlAttempt = 0;
+    let sigReconnectTimer: number | undefined;
+    let ctrlReconnectTimer: number | undefined;
+    let offerRetryTimer: number | undefined;
+    let lastOfferSdp: string | null = null;
+    let answered = false;
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
     const host = window.location.host;
+
+    async function sendOffer(pc: RTCPeerConnection, sig: WebSocket) {
+      if (!lastOfferSdp) {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        lastOfferSdp = offer.sdp ?? null;
+      }
+      if (lastOfferSdp && sig.readyState === WebSocket.OPEN) {
+        sig.send(JSON.stringify({ type: "offer", sdp: lastOfferSdp }));
+      }
+    }
+
+    // The signaling hub drops (not queues) a message when the agent side hasn't joined
+    // the room yet and replies "peer-missing" -- without a retry the viewer's very first
+    // offer can vanish and it just sits on "connecting" forever.
+    function scheduleOfferRetry(pc: RTCPeerConnection, sig: WebSocket) {
+      if (cancelled || answered) return;
+      window.clearTimeout(offerRetryTimer);
+      offerRetryTimer = window.setTimeout(() => {
+        if (cancelled || answered) return;
+        void sendOffer(pc, sig);
+      }, 1500);
+    }
+
+    function connectSignaling(pc: RTCPeerConnection) {
+      const sig = new WebSocket(
+        `${proto}://${host}/ws/sessions/${sessionId}/signaling?token=${encodeURIComponent(accessToken)}`,
+      );
+      sigRef.current = sig;
+
+      sig.onopen = () => {
+        sigAttempt = 0;
+        // Only (re)send the offer if we haven't connected yet -- a reconnect after the
+        // handshake already succeeded shouldn't re-trigger renegotiation on the agent.
+        if (!answered) void sendOffer(pc, sig);
+      };
+
+      sig.onmessage = async (msg) => {
+        try {
+          const data = JSON.parse(String(msg.data)) as {
+            type: string;
+            sdp?: string;
+            candidate?: RTCIceCandidateInit;
+          };
+          if (data.type === "answer" && data.sdp) {
+            answered = true;
+            window.clearTimeout(offerRetryTimer);
+            await pc.setRemoteDescription({ type: "answer", sdp: data.sdp });
+          } else if (data.type === "ice" && data.candidate) {
+            await pc.addIceCandidate(data.candidate);
+          } else if (data.type === "peer-missing") {
+            scheduleOfferRetry(pc, sig);
+          }
+        } catch (err) {
+          onError?.(err instanceof Error ? err.message : "webrtc signal error");
+        }
+      };
+
+      sig.onclose = () => {
+        if (cancelled) return;
+        sigReconnectTimer = window.setTimeout(() => {
+          if (cancelled) return;
+          sigAttempt += 1;
+          connectSignaling(pc);
+        }, backoffMs(sigAttempt));
+      };
+      sig.onerror = () => sig.close();
+    }
+
+    function connectControl() {
+      const ctrl = new WebSocket(
+        `${proto}://${host}/ws/sessions/${sessionId}/control?token=${encodeURIComponent(accessToken)}`,
+      );
+      ctrlRef.current = ctrl;
+      ctrl.onopen = () => {
+        ctrlAttempt = 0;
+      };
+      ctrl.onclose = () => {
+        if (cancelled) return;
+        ctrlReconnectTimer = window.setTimeout(() => {
+          if (cancelled) return;
+          ctrlAttempt += 1;
+          connectControl();
+        }, backoffMs(ctrlAttempt));
+      };
+      ctrl.onerror = () => ctrl.close();
+    }
 
     async function start() {
       try {
         const ice = await api.getIceServers(accessToken);
+        if (cancelled) return;
         const pc = new RTCPeerConnection({ iceServers: ice.iceServers });
         pcRef.current = pc;
         pc.addTransceiver("video", { direction: "recvonly" });
@@ -33,17 +129,10 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
             setStatus("live");
           }
         };
-        pc.onconnectionstatechange = () => {
-          setStatus(pc.connectionState);
-        };
-
-        const sig = new WebSocket(
-          `${proto}://${host}/ws/sessions/${sessionId}/signaling?token=${encodeURIComponent(accessToken)}`,
-        );
-        sigRef.current = sig;
-
+        pc.onconnectionstatechange = () => setStatus(pc.connectionState);
         pc.onicecandidate = (ev) => {
-          if (!ev.candidate || sig.readyState !== WebSocket.OPEN) return;
+          const sig = sigRef.current;
+          if (!ev.candidate || !sig || sig.readyState !== WebSocket.OPEN) return;
           sig.send(
             JSON.stringify({
               type: "ice",
@@ -56,49 +145,12 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
           );
         };
 
-        sig.onmessage = async (msg) => {
-          try {
-            const data = JSON.parse(String(msg.data)) as {
-              type: string;
-              sdp?: string;
-              candidate?: RTCIceCandidateInit;
-            };
-            if (data.type === "answer" && data.sdp) {
-              await pc.setRemoteDescription({ type: "answer", sdp: data.sdp });
-            } else if (data.type === "ice" && data.candidate) {
-              await pc.addIceCandidate(data.candidate);
-            } else if (data.type === "ready" || data.type === "peer-missing") {
-              // renegotiate when agent joins
-              if (pc.signalingState === "stable" || pc.signalingState === "have-local-offer") {
-                /* wait */
-              }
-              if (!pc.localDescription) {
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                sig.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-              }
-            }
-          } catch (err) {
-            onError?.(err instanceof Error ? err.message : "webrtc signal error");
-          }
-        };
-
-        sig.onopen = async () => {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          sig.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-        };
-
-        const ctrl = new WebSocket(
-          `${proto}://${host}/ws/sessions/${sessionId}/control?token=${encodeURIComponent(accessToken)}`,
-        );
-        ctrlRef.current = ctrl;
-
         if (cancelled) {
           pc.close();
-          sig.close();
-          ctrl.close();
+          return;
         }
+        connectSignaling(pc);
+        connectControl();
       } catch (err) {
         onError?.(err instanceof Error ? err.message : "webrtc failed");
         setStatus("failed");
@@ -108,7 +160,11 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
     void start();
     return () => {
       cancelled = true;
+      window.clearTimeout(sigReconnectTimer);
+      window.clearTimeout(ctrlReconnectTimer);
+      window.clearTimeout(offerRetryTimer);
       pcRef.current?.close();
+      pcRef.current = null;
       sigRef.current?.close();
       ctrlRef.current?.close();
     };
