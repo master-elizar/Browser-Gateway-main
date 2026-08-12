@@ -1,5 +1,7 @@
 export type Appearance = "light" | "dark" | "auto" | "hacker";
 export type ResolvedMode = "light" | "dark" | "hacker";
+export type Corner = "rounded" | "sharp";
+export type Density = "compact" | "regular" | "spacious";
 
 export type AccentId =
   | "blue"
@@ -21,6 +23,44 @@ export type AccentDef = {
 
 const APPEARANCE_KEY = "bg.appearance";
 const ACCENT_KEY = "bg.accent";
+const CORNER_KEY = "bg.corner";
+const DENSITY_KEY = "bg.density";
+
+export const CORNERS: Corner[] = ["rounded", "sharp"];
+export const DENSITIES: Density[] = ["compact", "regular", "spacious"];
+
+const CORNER_VARS: Record<Corner, Record<string, string>> = {
+  rounded: {
+    "--radius-sm": "8px",
+    "--radius-md": "12px",
+    "--radius-lg": "16px",
+    "--radius-xl": "22px",
+  },
+  sharp: {
+    "--radius-sm": "4px",
+    "--radius-md": "6px",
+    "--radius-lg": "10px",
+    "--radius-xl": "14px",
+  },
+};
+
+const DENSITY_VARS: Record<Density, Record<string, string>> = {
+  compact: {
+    "--control-h": "1.875rem",
+    "--control-py": "0.3rem",
+    "--row-py": "0.5rem",
+  },
+  regular: {
+    "--control-h": "2.25rem",
+    "--control-py": "0.5rem",
+    "--row-py": "0.8rem",
+  },
+  spacious: {
+    "--control-h": "2.625rem",
+    "--control-py": "0.7rem",
+    "--row-py": "1rem",
+  },
+};
 
 export const ACCENTS: AccentDef[] = [
   {
@@ -233,6 +273,42 @@ export function storeAccent(id: AccentId) {
   }
 }
 
+export function readStoredCorner(): Corner {
+  try {
+    const v = localStorage.getItem(CORNER_KEY);
+    if (v === "rounded" || v === "sharp") return v;
+  } catch {
+    /* ignore */
+  }
+  return "rounded";
+}
+
+export function storeCorner(c: Corner) {
+  try {
+    localStorage.setItem(CORNER_KEY, c);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readStoredDensity(): Density {
+  try {
+    const v = localStorage.getItem(DENSITY_KEY);
+    if (v === "compact" || v === "regular" || v === "spacious") return v;
+  } catch {
+    /* ignore */
+  }
+  return "regular";
+}
+
+export function storeDensity(d: Density) {
+  try {
+    localStorage.setItem(DENSITY_KEY, d);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function systemPrefersDark(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
@@ -244,12 +320,19 @@ export function resolveMode(appearance: Appearance): ResolvedMode {
 }
 
 /** Apply the resolved theme's CSS variables before React paint (also used by provider). */
-export function applyTheme(appearance: Appearance, accentId: AccentId) {
+export function applyTheme(
+  appearance: Appearance,
+  accentId: AccentId,
+  corner: Corner = readStoredCorner(),
+  density: Density = readStoredDensity(),
+) {
   const root = document.documentElement;
   const mode = resolveMode(appearance);
   root.setAttribute("data-appearance", appearance);
   root.setAttribute("data-mode", mode);
   root.setAttribute("data-accent", accentId);
+  root.setAttribute("data-corner", corner);
+  root.setAttribute("data-density", density);
 
   const base = mode === "light" ? LIGHT_VARS : mode === "dark" ? DARK_VARS : HACKER_VARS;
   for (const [key, value] of Object.entries(base)) {
@@ -259,5 +342,11 @@ export function applyTheme(appearance: Appearance, accentId: AccentId) {
     for (const [key, value] of Object.entries(getAccent(accentId).vars)) {
       root.style.setProperty(key, value);
     }
+  }
+  for (const [key, value] of Object.entries(CORNER_VARS[corner])) {
+    root.style.setProperty(key, value);
+  }
+  for (const [key, value] of Object.entries(DENSITY_VARS[density])) {
+    root.style.setProperty(key, value);
   }
 }

@@ -52,6 +52,11 @@
   --topbar-h: 54px;
 
   --ease-apple: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Density (overridden by ThemeContext: compact / regular / spacious) */
+  --control-h: 2.25rem;
+  --control-py: 0.5rem;
+  --row-py: 0.8rem;
 }
 
 html,
@@ -123,10 +128,11 @@ html[data-mode="hacker"] .btn-primary {
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
+  min-height: var(--control-h);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-line);
   background: var(--color-panel-2);
-  padding: 0.55rem 0.8rem;
+  padding: var(--control-py) 0.8rem;
   color: var(--color-snow);
   font-size: 0.875rem;
   outline: none;
@@ -176,11 +182,12 @@ textarea.input-field {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  min-height: var(--control-h);
   border-radius: 980px;
   border: 1px solid transparent;
   background: var(--color-signal);
   color: #ffffff;
-  padding: 0.55rem 1.15rem;
+  padding: var(--control-py) 1.15rem;
   font-size: 0.875rem;
   font-weight: 590;
   letter-spacing: 0;
@@ -206,10 +213,11 @@ textarea.input-field {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  min-height: var(--control-h);
   border-radius: 980px;
   border: 1px solid var(--color-line);
   background: var(--color-panel-2);
-  padding: 0.5rem 1rem;
+  padding: var(--control-py) 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-snow);
@@ -235,10 +243,11 @@ textarea.input-field {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  min-height: var(--control-h);
   border-radius: 980px;
   border: 1px solid transparent;
   background: var(--color-danger-dim);
-  padding: 0.5rem 1rem;
+  padding: var(--control-py) 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-danger);
@@ -259,8 +268,8 @@ textarea.input-field {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: var(--control-h);
+  height: var(--control-h);
   border-radius: 999px;
   border: 1px solid transparent;
   color: var(--color-fog);
@@ -320,7 +329,7 @@ textarea.input-field {
 }
 
 .ui-table th {
-  padding: 0.7rem 1rem;
+  padding: var(--row-py) 1rem;
   font-size: 0.75rem;
   font-weight: 590;
   letter-spacing: 0;
@@ -329,7 +338,7 @@ textarea.input-field {
 }
 
 .ui-table td {
-  padding: 0.8rem 1rem;
+  padding: var(--row-py) 1rem;
   border-top: 1px solid var(--color-line);
   vertical-align: middle;
 }
@@ -412,7 +421,7 @@ textarea.input-field {
   align-items: center;
   gap: 0.65rem;
   border-radius: var(--radius-md);
-  padding: 0.5rem 0.7rem;
+  padding: var(--control-py) 0.7rem;
   font-size: 0.875rem;
   color: var(--color-fog);
   transition: background 160ms var(--ease-apple), color 160ms var(--ease-apple);

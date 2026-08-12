@@ -179,12 +179,12 @@ export function SessionsPage() {
                   </td>
                   <td className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Link to={`/sessions/${s.id}`} className="btn-ghost !py-1.5 !text-xs">
+                      <Link to={`/sessions/${s.id}`} className="btn-ghost !min-h-0 !py-1.5 !text-xs">
                         {t("sessions.open")}
                       </Link>
                       <Button
                         variant="ghost"
-                        className="!py-1.5 !text-xs"
+                        className="!min-h-0 !py-1.5 !text-xs"
                         onClick={() => void stop(s.id)}
                       >
                         {t("sessions.stop")}

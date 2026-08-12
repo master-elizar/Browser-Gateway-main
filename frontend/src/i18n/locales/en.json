@@ -437,7 +437,7 @@
   },
   "theme": {
     "title": "Appearance",
-    "subtitle": "Pick a light, dark, or automatic look, then an accent color. Saved in this browser.",
+    "subtitle": "Pick a light, dark, or automatic look, an accent color, corner style, and density. Saved in this browser.",
     "active": "Active",
     "appearance": "Appearance",
     "mode": {
@@ -456,7 +456,14 @@
       "graphite": "Graphite"
     },
     "hacker": "Hacker mode",
-    "hackerHint": "A terminal-green, monospace look with a live signal field — just for fun."
+    "hackerHint": "A terminal-green, monospace look with a live signal field — just for fun.",
+    "corner": "Corner style",
+    "cornerRounded": "Rounded",
+    "cornerSharp": "Sharp",
+    "density": "Density",
+    "densityCompact": "Compact",
+    "densityRegular": "Regular",
+    "densitySpacious": "Spacious"
   },
   "motion": {
     "title": "Motion & effects",

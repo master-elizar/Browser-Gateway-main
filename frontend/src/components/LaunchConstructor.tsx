@@ -186,7 +186,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
               <h2 className="text-base font-semibold text-[var(--color-snow)]">{t(`launch.steps.${step}`)}</h2>
               <p className="mt-0.5 text-xs text-[var(--color-muted)]">{t(`launch.steps.${step}Hint`)}</p>
             </div>
-            <Button variant="ghost" className="!px-2 !py-1 text-xs" onClick={onClose}>
+            <Button variant="ghost" className="!min-h-0 !px-2 !py-1 text-xs" onClick={onClose}>
               {t("launch.cancel")}
             </Button>
           </header>

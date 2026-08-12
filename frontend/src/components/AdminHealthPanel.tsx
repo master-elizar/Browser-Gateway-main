@@ -48,7 +48,7 @@ export function AdminHealthPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-[var(--color-muted)]">{t("admin.healthHint")}</p>
-        <Button variant="ghost" className="!py-1.5 !text-xs" disabled={busy} onClick={() => void onRefresh()}>
+        <Button variant="ghost" className="!min-h-0 !py-1.5 !text-xs" disabled={busy} onClick={() => void onRefresh()}>
           <IconRefresh size={14} />
           {t("common.refresh")}
         </Button>

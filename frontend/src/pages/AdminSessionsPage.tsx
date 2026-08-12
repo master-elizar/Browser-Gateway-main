@@ -103,11 +103,11 @@ export function AdminSessionsPage() {
                 </td>
                 <td>
                   <div className="flex flex-wrap gap-2">
-                    <Link to={`/sessions/${s.id}`} className="btn-ghost !py-1.5 !text-xs">
+                    <Link to={`/sessions/${s.id}`} className="btn-ghost !min-h-0 !py-1.5 !text-xs">
                       {t("sessions.open")}
                     </Link>
                     {s.status === "RUNNING" || s.status === "STARTING" || s.status === "IDLE" ? (
-                      <Button variant="danger" className="!py-1.5 !text-xs" onClick={() => void stop(s.id)}>
+                      <Button variant="danger" className="!min-h-0 !py-1.5 !text-xs" onClick={() => void stop(s.id)}>
                         {t("sessions.stop")}
                       </Button>
                     ) : null}

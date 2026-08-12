@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../theme/ThemeContext";
-import type { AccentId, Appearance } from "../theme/themes";
+import { CORNERS, DENSITIES, type AccentId, type Appearance } from "../theme/themes";
 import { Segmented } from "./ui";
 import { IconCheck, IconTerminal } from "./ui/icons";
 
@@ -8,7 +8,8 @@ const APPEARANCES: Exclude<Appearance, "hacker">[] = ["light", "dark", "auto"];
 
 export function ThemePicker() {
   const { t } = useTranslation();
-  const { appearance, accent, accents, setAppearance, setAccent, isHacker } = useTheme();
+  const { appearance, accent, accents, corner, density, setAppearance, setAccent, setCorner, setDensity, isHacker } =
+    useTheme();
 
   return (
     <div className="space-y-6">
@@ -44,6 +45,24 @@ export function ThemePicker() {
         </div>
       </div>
 
+      <div>
+        <div className="field-label mb-2">{t("theme.corner")}</div>
+        <Segmented
+          options={CORNERS.map((c) => ({ value: c, label: t(`theme.corner${cap(c)}`) }))}
+          value={corner}
+          onChange={setCorner}
+        />
+      </div>
+
+      <div>
+        <div className="field-label mb-2">{t("theme.density")}</div>
+        <Segmented
+          options={DENSITIES.map((d) => ({ value: d, label: t(`theme.density${cap(d)}`) }))}
+          value={density}
+          onChange={setDensity}
+        />
+      </div>
+
       <button
         type="button"
         onClick={() => setAppearance(isHacker ? "auto" : "hacker")}
@@ -71,4 +90,8 @@ export function ThemePicker() {
       </button>
     </div>
   );
+}
+
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }

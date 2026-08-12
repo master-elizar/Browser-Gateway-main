@@ -198,7 +198,7 @@ export function AdminUsersPage() {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       variant="ghost"
-                      className="!py-1.5 !text-xs"
+                      className="!min-h-0 !py-1.5 !text-xs"
                       onClick={() => void toggleActive(u)}
                       disabled={u.id === me?.id}
                     >
@@ -206,7 +206,7 @@ export function AdminUsersPage() {
                     </Button>
                     <Button
                       variant="danger"
-                      className="!py-1.5 !text-xs"
+                      className="!min-h-0 !py-1.5 !text-xs"
                       onClick={() => void removeUser(u)}
                       disabled={u.id === me?.id}
                     >
