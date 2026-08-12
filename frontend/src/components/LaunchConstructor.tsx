@@ -131,7 +131,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 flex max-h-[min(720px,92vh)] w-full max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] shadow-[var(--shadow-md)]"
+        className="relative z-10 flex h-[min(720px,92vh)] w-full max-w-4xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] shadow-[var(--shadow-md)]"
       >
         {/* vSphere-like left rail */}
         <aside className="hidden w-56 shrink-0 border-r border-[var(--color-line)] bg-[var(--color-bg-elevated)] md:flex md:flex-col">
