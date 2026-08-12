@@ -136,6 +136,11 @@ export function SessionViewerPage() {
 
   useEffect(() => {
     if (!features.viewerNetworkEnabled || !accessToken || !id || session?.status !== "RUNNING") return;
+    // Captured as their own consts so TS keeps trusting the non-null narrowing above once
+    // they're referenced inside the nested connect() function declaration below -- it
+    // doesn't propagate narrowing of the outer accessToken/id across a function boundary.
+    const token = accessToken;
+    const sessionId = id;
     let closed = false;
     let attempt = 0;
     let reconnectTimer: number | undefined;
@@ -143,7 +148,7 @@ export function SessionViewerPage() {
 
     const load = async () => {
       try {
-        const res = await api.listNetworkEvents(accessToken, id);
+        const res = await api.listNetworkEvents(token, sessionId);
         if (!closed) setEvents(res.items.slice(-400));
       } catch {
         /* ignore */
@@ -155,7 +160,7 @@ export function SessionViewerPage() {
 
     function connect() {
       ws = new WebSocket(
-        `${proto}://${window.location.host}/ws/sessions/${id}/netmon?token=${encodeURIComponent(accessToken)}`,
+        `${proto}://${window.location.host}/ws/sessions/${sessionId}/netmon?token=${encodeURIComponent(token)}`,
       );
       ws.onopen = () => {
         attempt = 0;
