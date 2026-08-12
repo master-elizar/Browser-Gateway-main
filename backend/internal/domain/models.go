@@ -48,6 +48,10 @@ type BrowserSession struct {
 	MemoryMB     int     `json:"memoryMb,omitempty"`
 	CPUs         float64 `json:"cpus,omitempty"`
 	Resolution   string  `json:"resolution,omitempty"` // e.g. 1280x800x24
+	// NetworkEventLimit caps how many network-panel events GET /network/events returns
+	// and the frontend keeps in memory. 0/unset -> default (500), -1 -> unlimited, N>0 -> N.
+	// Normalized by sessions.Service.Create; see that package for the canonical convention.
+	NetworkEventLimit int           `json:"networkEventLimit" gorm:"column:network_event_limit;default:500"`
 	AgentToken   string        `json:"-" gorm:"not null"`
 	ErrorReason  string        `json:"errorReason,omitempty"`
 	StartedAt    *time.Time    `json:"startedAt,omitempty"`

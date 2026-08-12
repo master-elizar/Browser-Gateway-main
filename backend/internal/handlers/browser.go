@@ -11,15 +11,16 @@ import (
 )
 
 type createBrowserReq struct {
-	Name       string  `json:"name"`
-	StartURL   string  `json:"startUrl"`
-	Browser    string  `json:"browser"`
-	DnsMode    string  `json:"dnsMode"`
-	DnsServers string  `json:"dnsServers"`
-	DnsDohUrl  string  `json:"dnsDohUrl"`
-	MemoryMB   int     `json:"memoryMb"`
-	CPUs       float64 `json:"cpus"`
-	Resolution string  `json:"resolution"`
+	Name              string  `json:"name"`
+	StartURL          string  `json:"startUrl"`
+	Browser           string  `json:"browser"`
+	DnsMode           string  `json:"dnsMode"`
+	DnsServers        string  `json:"dnsServers"`
+	DnsDohUrl         string  `json:"dnsDohUrl"`
+	MemoryMB          int     `json:"memoryMb"`
+	CPUs              float64 `json:"cpus"`
+	Resolution        string  `json:"resolution"`
+	NetworkEventLimit int     `json:"networkEventLimit"`
 }
 
 func (h *Handler) BrowserLaunchOptions(c *fiber.Ctx) error {
@@ -35,16 +36,17 @@ func (h *Handler) BrowserCreate(c *fiber.Ctx) error {
 	var req createBrowserReq
 	_ = c.BodyParser(&req)
 	view, err := h.sessions.Create(c.Context(), sessions.CreateInput{
-		OwnerID:    user.ID,
-		Name:       req.Name,
-		StartURL:   req.StartURL,
-		Browser:    req.Browser,
-		DnsMode:    req.DnsMode,
-		DnsServers: req.DnsServers,
-		DnsDohUrl:  req.DnsDohUrl,
-		MemoryMB:   req.MemoryMB,
-		CPUs:       req.CPUs,
-		Resolution: req.Resolution,
+		OwnerID:           user.ID,
+		Name:              req.Name,
+		StartURL:          req.StartURL,
+		Browser:           req.Browser,
+		DnsMode:           req.DnsMode,
+		DnsServers:        req.DnsServers,
+		DnsDohUrl:         req.DnsDohUrl,
+		MemoryMB:          req.MemoryMB,
+		CPUs:              req.CPUs,
+		Resolution:        req.Resolution,
+		NetworkEventLimit: req.NetworkEventLimit,
 	})
 	if err != nil {
 		return mapSessionErr(err)

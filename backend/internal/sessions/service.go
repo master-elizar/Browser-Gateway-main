@@ -42,6 +42,8 @@ type CreateInput struct {
 	MemoryMB   int
 	CPUs       float64
 	Resolution string
+	// NetworkEventLimit: 0/unset -> default (500), -1 -> unlimited, N>0 -> exactly N.
+	NetworkEventLimit int
 }
 
 type SessionView struct {
@@ -58,6 +60,7 @@ type SessionView struct {
 	MemoryMB     int                  `json:"memoryMb,omitempty"`
 	CPUs         float64              `json:"cpus,omitempty"`
 	Resolution   string               `json:"resolution,omitempty"`
+	NetworkEventLimit int             `json:"networkEventLimit"`
 	ErrorReason  string               `json:"errorReason,omitempty"`
 	StartedAt    *time.Time           `json:"startedAt,omitempty"`
 	StoppedAt    *time.Time           `json:"stoppedAt,omitempty"`
@@ -83,22 +86,25 @@ type LaunchBrowserOption struct {
 }
 
 type LaunchDefaults struct {
-	Browser    string  `json:"browser"`
-	StartURL   string  `json:"startUrl"`
-	DnsMode    string  `json:"dnsMode"`
-	DnsServers string  `json:"dnsServers"`
-	DnsDohUrl  string  `json:"dnsDohUrl"`
-	MemoryMB   int     `json:"memoryMb"`
-	CPUs       float64 `json:"cpus"`
-	Resolution string  `json:"resolution"`
+	Browser           string  `json:"browser"`
+	StartURL          string  `json:"startUrl"`
+	DnsMode           string  `json:"dnsMode"`
+	DnsServers        string  `json:"dnsServers"`
+	DnsDohUrl         string  `json:"dnsDohUrl"`
+	MemoryMB          int     `json:"memoryMb"`
+	CPUs              float64 `json:"cpus"`
+	Resolution        string  `json:"resolution"`
+	NetworkEventLimit int     `json:"networkEventLimit"`
 }
 
 type LaunchLimits struct {
-	MemoryMBMin int     `json:"memoryMbMin"`
-	MemoryMBMax int     `json:"memoryMbMax"`
-	CPUsMin     float64 `json:"cpusMin"`
-	CPUsMax     float64 `json:"cpusMax"`
-	Resolutions []string `json:"resolutions"`
+	MemoryMBMin        int      `json:"memoryMbMin"`
+	MemoryMBMax        int      `json:"memoryMbMax"`
+	CPUsMin            float64  `json:"cpusMin"`
+	CPUsMax            float64  `json:"cpusMax"`
+	Resolutions        []string `json:"resolutions"`
+	// NetworkEventLimits: preset choices for the launch wizard; -1 means unlimited.
+	NetworkEventLimits []int    `json:"networkEventLimits"`
 }
 
 func toView(s domain.BrowserSession) SessionView {
@@ -116,6 +122,7 @@ func toView(s domain.BrowserSession) SessionView {
 		MemoryMB:    s.MemoryMB,
 		CPUs:        s.CPUs,
 		Resolution:  s.Resolution,
+		NetworkEventLimit: s.NetworkEventLimit,
 		ErrorReason: s.ErrorReason,
 		StartedAt:   s.StartedAt,
 		StoppedAt:   s.StoppedAt,
@@ -161,24 +168,34 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*SessionView, err
 	if resolution == "" {
 		resolution = "1280x800x24"
 	}
+	networkEventLimit := in.NetworkEventLimit
+	switch {
+	case networkEventLimit == 0:
+		networkEventLimit = 500
+	case networkEventLimit < 0:
+		networkEventLimit = -1
+	case networkEventLimit > 50000:
+		networkEventLimit = 50000
+	}
 	agentToken, err := auth.RandomToken(24)
 	if err != nil {
 		return nil, err
 	}
 	row := domain.BrowserSession{
-		ID:         uuid.NewString(),
-		OwnerID:    in.OwnerID,
-		Name:       in.Name,
-		Status:     domain.StatusCreating,
-		StartURL:   in.StartURL,
-		Browser:    browser,
-		DnsMode:    strings.TrimSpace(in.DnsMode),
-		DnsServers: strings.TrimSpace(in.DnsServers),
-		DnsDohUrl:  strings.TrimSpace(in.DnsDohUrl),
-		MemoryMB:   in.MemoryMB,
-		CPUs:       in.CPUs,
-		Resolution: resolution,
-		AgentToken: agentToken,
+		ID:                uuid.NewString(),
+		OwnerID:           in.OwnerID,
+		Name:               in.Name,
+		Status:             domain.StatusCreating,
+		StartURL:           in.StartURL,
+		Browser:            browser,
+		DnsMode:            strings.TrimSpace(in.DnsMode),
+		DnsServers:         strings.TrimSpace(in.DnsServers),
+		DnsDohUrl:          strings.TrimSpace(in.DnsDohUrl),
+		MemoryMB:           in.MemoryMB,
+		CPUs:               in.CPUs,
+		Resolution:         resolution,
+		NetworkEventLimit:  networkEventLimit,
+		AgentToken:         agentToken,
 	}
 	if err := s.db.Create(&row).Error; err != nil {
 		return nil, err
@@ -204,9 +221,10 @@ func (s *Service) LaunchOptions() LaunchOptions {
 			DnsMode:    firstNonEmpty(st.DnsMode, "docker"),
 			DnsServers: firstNonEmpty(st.DnsServers, "8.8.8.8,1.1.1.1"),
 			DnsDohUrl:  firstNonEmpty(st.DnsDohUrl, "https://cloudflare-dns.com/dns-query"),
-			MemoryMB:   1536,
-			CPUs:       1.5,
-			Resolution: "1280x800x24",
+			MemoryMB:          1536,
+			CPUs:              1.5,
+			Resolution:        "1280x800x24",
+			NetworkEventLimit: 500,
 		},
 		Limits: LaunchLimits{
 			MemoryMBMin: 512,
@@ -220,6 +238,8 @@ func (s *Service) LaunchOptions() LaunchOptions {
 				"1600x900x24",
 				"1920x1080x24",
 			},
+			// -1 = unlimited (matches CreateInput/BrowserSession.NetworkEventLimit convention).
+			NetworkEventLimits: []int{200, 500, 1000, 2000, 5000, -1},
 		},
 	}
 }

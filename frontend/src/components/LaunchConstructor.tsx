@@ -37,6 +37,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
     memoryMb: 1536,
     cpus: 1.5,
     resolution: "1280x800x24",
+    networkEventLimit: 500,
   });
   const [nameExample, setNameExample] = useState(() => `Session ${new Date().toLocaleTimeString()}`);
   const [urlExample, setUrlExample] = useState("https://example.com");
@@ -68,6 +69,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
           memoryMb: opts.defaults.memoryMb,
           cpus: opts.defaults.cpus,
           resolution: opts.defaults.resolution,
+          networkEventLimit: opts.defaults.networkEventLimit || 500,
         });
       } catch (err) {
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "error");
@@ -97,8 +99,12 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
       name: draft.name || nameExample,
       dnsServers: draft.dnsServers || dnsServersExample,
       dnsDohUrl: draft.dnsDohUrl || dnsDohExample,
+      networkEventLimit:
+        draft.networkEventLimit === -1
+          ? t("launch.networkEventLimitUnlimited")
+          : `${draft.networkEventLimit ?? 500}`,
     };
-  }, [browsers, draft, urlExample, nameExample, dnsServersExample, dnsDohExample]);
+  }, [browsers, draft, urlExample, nameExample, dnsServersExample, dnsDohExample, t]);
 
   function resolvedLaunchInput(): CreateSessionInput {
     return {
@@ -332,6 +338,18 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
                     spellCheck={false}
                   />
                 </Field>
+                <Field label={t("launch.networkEventLimit")} hint={t("launch.networkEventLimitHint")}>
+                  <Select
+                    value={String(draft.networkEventLimit ?? 500)}
+                    onChange={(e) => setDraft((d) => ({ ...d, networkEventLimit: Number(e.target.value) }))}
+                  >
+                    {(limits?.networkEventLimits ?? [200, 500, 1000, 2000, 5000, -1]).map((n) => (
+                      <option key={n} value={n}>
+                        {n === -1 ? t("launch.networkEventLimitUnlimited") : n}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
               </div>
             )}
 
@@ -349,6 +367,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
                     [t("admin.dnsMode"), summary.dns],
                     [t("admin.dnsServers"), summary.dnsServers],
                     [t("admin.dnsDohUrl"), summary.dnsDohUrl],
+                    [t("launch.networkEventLimit"), summary.networkEventLimit],
                   ].map(([k, v]) => (
                     <div key={String(k)} className="flex gap-4 px-4 py-2.5 text-xs">
                       <dt className="shrink-0 text-[var(--color-muted)]">{k}</dt>

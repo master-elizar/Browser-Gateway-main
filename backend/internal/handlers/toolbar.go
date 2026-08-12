@@ -328,16 +328,25 @@ func (h *Handler) BrowserNetworkEvents(c *fiber.Ctx) error {
 	}
 	user := auth.CurrentUser(c)
 	id := c.Params("id")
-	if _, err := h.sessions.Get(user, id); err != nil {
+	view, err := h.sessions.Get(user, id)
+	if err != nil {
 		return mapSessionErr(err)
 	}
 	q := h.st.DB.Where("session_id = ?", id).Order("created_at desc")
 	if t := c.Query("type"); t != "" {
 		q = q.Where("type = ?", t)
 	}
-	limit := 500
+	// -1 means unlimited (session-level choice from the launch wizard); 0/unset falls back
+	// to the same 500 default sessions.Service.Create already normalizes new sessions to.
+	limit := view.NetworkEventLimit
+	if limit == 0 {
+		limit = 500
+	}
+	if limit > 0 {
+		q = q.Limit(limit)
+	}
 	var rows []domain.NetworkEvent
-	if err := q.Limit(limit).Find(&rows).Error; err != nil {
+	if err := q.Find(&rows).Error; err != nil {
 		return err
 	}
 	items := make([]map[string]any, 0, len(rows))

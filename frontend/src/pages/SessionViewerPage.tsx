@@ -50,6 +50,17 @@ function tiKey(value?: string, kind?: string): string {
   return (h || v).replace(/^\[|\]$/g, "");
 }
 
+// Mirrors backend/internal/sessions/service.go's convention: -1 = unlimited, 0/absent = 500.
+function eventCapFor(limit: number | undefined): number | null {
+  if (limit === -1) return null;
+  if (!limit || limit <= 0) return 500;
+  return limit;
+}
+
+function capEvents<T>(items: T[], cap: number | null): T[] {
+  return cap === null ? items : items.slice(-cap);
+}
+
 export function SessionViewerPage() {
   const { id } = useParams();
   const { t } = useTranslation();
@@ -74,6 +85,7 @@ export function SessionViewerPage() {
   const [enrichBusy, setEnrichBusy] = useState(false);
   const [lookupBusy, setLookupBusy] = useState<string | null>(null);
   const [tiOverlay, setTiOverlay] = useState<Record<string, TIResult>>({});
+  const eventCap = eventCapFor(session?.networkEventLimit);
   const fileRef = useRef<HTMLInputElement>(null);
   const frameWrapRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -149,7 +161,7 @@ export function SessionViewerPage() {
     const load = async () => {
       try {
         const res = await api.listNetworkEvents(token, sessionId);
-        if (!closed) setEvents(res.items.slice(-400));
+        if (!closed) setEvents(capEvents(res.items, eventCap));
       } catch {
         /* ignore */
       }
@@ -169,7 +181,7 @@ export function SessionViewerPage() {
         try {
           const ev = JSON.parse(String(msg.data)) as NetworkEventItem;
           if (!ev.type || ev.type === "status") return;
-          setEvents((prev) => [...prev.slice(-399), ev]);
+          setEvents((prev) => capEvents([...prev, ev], eventCap));
         } catch {
           /* ignore */
         }
@@ -405,7 +417,7 @@ export function SessionViewerPage() {
           providers: item.providers,
         }));
       if (tiEvents.length) {
-        setEvents((prev) => [...prev, ...tiEvents].slice(-400));
+        setEvents((prev) => capEvents([...prev, ...tiEvents], eventCap));
       }
       setNote(t("viewer.tiEnriched", { count: res.total ?? res.items?.length ?? 0 }));
     } catch (err) {
@@ -435,24 +447,29 @@ export function SessionViewerPage() {
       // Mirror into the live event list so the TI tab updates immediately;
       // backend also persists for History.
       if (res.indicator && !res.error) {
-        setEvents((prev) => [
-          ...prev.slice(-399),
-          {
-            type: "ti",
-            ts: new Date().toISOString(),
-            provider: res.provider,
-            kind: res.kind,
-            indicator: res.indicator,
-            verdict: res.verdict,
-            malicious: res.malicious,
-            suspicious: res.suspicious,
-            harmless: res.harmless,
-            undetected: res.undetected,
-            permalink: res.permalink,
-            cached: res.cached,
-            providers: res.providers,
-          },
-        ]);
+        setEvents((prev) =>
+          capEvents(
+            [
+              ...prev,
+              {
+                type: "ti",
+                ts: new Date().toISOString(),
+                provider: res.provider,
+                kind: res.kind,
+                indicator: res.indicator,
+                verdict: res.verdict,
+                malicious: res.malicious,
+                suspicious: res.suspicious,
+                harmless: res.harmless,
+                undetected: res.undetected,
+                permalink: res.permalink,
+                cached: res.cached,
+                providers: res.providers,
+              },
+            ],
+            eventCap,
+          ),
+        );
       }
       if (res.error) setError(res.error);
     } catch (err) {

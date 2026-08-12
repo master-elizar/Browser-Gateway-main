@@ -119,7 +119,10 @@
     "browserDesc": {
       "chromium": "Chromium with CDP and native DoH flags",
       "firefox": "Firefox ESR with TRR / DoH preferences"
-    }
+    },
+    "networkEventLimit": "Network panel event limit",
+    "networkEventLimitHint": "How many DNS/HTTP events the Network panel keeps in view. Older events roll off past this count.",
+    "networkEventLimitUnlimited": "Unlimited"
   },
   "viewer": {
     "title": "Remote browser",

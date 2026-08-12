@@ -172,6 +172,8 @@ export type BrowserSession = {
   memoryMb?: number;
   cpus?: number;
   resolution?: string;
+  /** -1 = unlimited, 0/absent = backend default (500). */
+  networkEventLimit?: number;
   errorReason?: string;
   startedAt?: string;
   stoppedAt?: string;
@@ -194,6 +196,8 @@ export type CreateSessionInput = {
   memoryMb?: number;
   cpus?: number;
   resolution?: string;
+  /** -1 = unlimited, 0/absent = backend default (500). */
+  networkEventLimit?: number;
 };
 
 export type LaunchOptions = {
@@ -207,6 +211,7 @@ export type LaunchOptions = {
     memoryMb: number;
     cpus: number;
     resolution: string;
+    networkEventLimit: number;
   };
   limits: {
     memoryMbMin: number;
@@ -214,6 +219,8 @@ export type LaunchOptions = {
     cpusMin: number;
     cpusMax: number;
     resolutions: string[];
+    /** Preset choices for the launch wizard; -1 means unlimited. */
+    networkEventLimits: number[];
   };
 };
 

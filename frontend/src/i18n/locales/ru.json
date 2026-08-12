@@ -119,7 +119,10 @@
     "browserDesc": {
       "chromium": "Chromium с CDP и нативным DoH",
       "firefox": "Firefox ESR с TRR / DoH"
-    }
+    },
+    "networkEventLimit": "Лимит событий сетевой панели",
+    "networkEventLimitHint": "Сколько DNS/HTTP-событий панель «Сеть» держит одновременно. Более старые события вытесняются после этого числа.",
+    "networkEventLimitUnlimited": "Без ограничений"
   },
   "viewer": {
     "title": "Удалённый браузер",
