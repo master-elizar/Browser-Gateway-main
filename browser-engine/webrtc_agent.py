@@ -31,7 +31,10 @@ async def run() -> None:
         from mss import mss
         import websockets
     except Exception as exc:  # noqa: BLE001
-        print(f"[webrtc] deps missing, disabled: {exc}", flush=True)
+        # This process is launched once by entrypoint.sh and never restarted if it exits --
+        # if this fires, WebRTC is silently dead for the rest of the container's life.
+        print(f"[webrtc] FATAL: dependency import failed, WebRTC disabled for this session: {exc!r}", flush=True)
+        traceback.print_exc()
         return
 
     class X11Track(VideoStreamTrack):
@@ -76,7 +79,11 @@ async def run() -> None:
 
         @pc.on("icecandidate")
         async def on_ice(candidate) -> None:  # type: ignore[no-untyped-def]
-            if candidate is None or ws_holder["ws"] is None:
+            if candidate is None:
+                print("[webrtc] local ICE gathering complete", flush=True)
+                return
+            if ws_holder["ws"] is None:
+                print("[webrtc] local ICE candidate ready but signaling is not connected, dropped", flush=True)
                 return
             try:
                 await ws_holder["ws"].send(
@@ -91,6 +98,7 @@ async def run() -> None:
                         }
                     )
                 )
+                print("[webrtc] local ICE candidate sent", flush=True)
             except Exception as exc:  # noqa: BLE001
                 print(f"[webrtc] ice send: {exc}", flush=True)
 
@@ -111,6 +119,7 @@ async def run() -> None:
                         continue
                     typ = msg.get("type")
                     if typ == "offer":
+                        print(f"[webrtc] offer received (sdp len={len(msg.get('sdp') or '')})", flush=True)
                         peer = await ensure_pc()
                         offer = RTCSessionDescription(sdp=msg["sdp"], type="offer")
                         await peer.setRemoteDescription(offer)
@@ -119,7 +128,9 @@ async def run() -> None:
                         await ws.send(
                             json.dumps({"type": "answer", "sdp": peer.localDescription.sdp})
                         )
+                        print("[webrtc] answer sent", flush=True)
                     elif typ == "ice" and msg.get("candidate"):
+                        print("[webrtc] remote ICE candidate received", flush=True)
                         peer = await ensure_pc()
                         c = msg["candidate"]
                         try:
@@ -130,10 +141,17 @@ async def run() -> None:
                                     "candidate": c.get("candidate"),
                                 }
                             )
+                            print("[webrtc] remote ICE candidate added", flush=True)
                         except Exception as exc:  # noqa: BLE001
                             print(f"[webrtc] addIce: {exc}", flush=True)
                     elif typ == "ready":
+                        print("[webrtc] signaling hub acked registration (role=agent)", flush=True)
                         continue
+                    elif typ == "peer-missing":
+                        print("[webrtc] signaling hub: no viewer connected yet for this session", flush=True)
+                        continue
+                    else:
+                        print(f"[webrtc] unhandled signaling message type={typ!r}", flush=True)
         except Exception as exc:  # noqa: BLE001
             print(f"[webrtc] loop: {exc}", flush=True)
             traceback.print_exc()
