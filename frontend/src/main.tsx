@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import { ToastProvider } from "./components/ui/Toast";
+import { HackerAmbience } from "./components/HackerAmbience";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { MotionProvider } from "./motion/MotionContext";
 import "./i18n";
@@ -17,6 +18,7 @@ createRoot(document.getElementById("root")!).render(
         <MotionProvider>
           <AuthProvider>
             <ToastProvider>
+              <HackerAmbience />
               <div className="relative z-10 min-h-full">
                 <App />
               </div>

@@ -122,6 +122,36 @@ html[data-mode="hacker"] .btn-primary {
     0 0 22px color-mix(in srgb, var(--color-signal) 35%, transparent);
 }
 
+/* HackerAmbience: one GPU-composited transform animation, no per-frame JS. */
+.hacker-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--color-signal) 7%, transparent),
+    transparent
+  );
+  animation: hacker-scan 7s linear infinite;
+  will-change: transform;
+}
+@keyframes hacker-scan {
+  from {
+    transform: translateY(-140px);
+  }
+  to {
+    transform: translateY(100vh);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hacker-scan {
+    animation: none;
+    display: none;
+  }
+}
+
 /* ——— Form controls ——— */
 .input-field {
   width: 100%;
