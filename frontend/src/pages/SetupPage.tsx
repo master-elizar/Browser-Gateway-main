@@ -67,7 +67,7 @@ export function SetupPage() {
           <p className="mt-1 text-sm text-[var(--color-fog)]">{t("setup.subtitle")}</p>
         </div>
 
-        <form onSubmit={onSubmit} className="ui-card space-y-3 p-6">
+        <form onSubmit={onSubmit} className="ui-card space-y-4 p-6">
           <Field label={t("setup.key")}>
             <Input
               className="font-mono"

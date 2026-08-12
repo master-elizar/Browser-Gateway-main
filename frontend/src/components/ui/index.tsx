@@ -54,6 +54,46 @@ export function Field({
   );
 }
 
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  fullWidth = false,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  /** Stretch to fill the container with equal-width segments (e.g. a form's own tab bar). */
+  fullWidth?: boolean;
+}) {
+  return (
+    <div
+      className={`${fullWidth ? "flex" : "inline-flex"} rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] p-1`}
+    >
+      {options.map((opt) => {
+        const active = opt.value === value;
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            aria-pressed={active}
+            className={[
+              fullWidth ? "flex-1" : "",
+              "rounded-[calc(var(--radius-md)-4px)] px-4 py-1.5 text-sm font-medium transition",
+              active
+                ? "bg-[var(--color-panel)] text-[var(--color-snow)] shadow-[var(--shadow-sm)]"
+                : "text-[var(--color-fog)] hover:text-[var(--color-snow)]",
+            ].join(" ")}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Toggle({
   checked,
   onChange,
@@ -128,7 +168,7 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-[var(--color-line)] px-5 py-4">
+    <div className="flex items-start justify-between gap-3 border-b border-[var(--color-line)] px-6 py-5">
       <div>
         <h2 className="section-title">{title}</h2>
         {description && <p className="section-desc">{description}</p>}
@@ -139,7 +179,7 @@ export function CardHeader({
 }
 
 export function CardBody({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`px-5 py-4 ${className}`.trim()}>{children}</div>;
+  return <div className={`px-6 py-5 ${className}`.trim()}>{children}</div>;
 }
 
 export function PageHeader({

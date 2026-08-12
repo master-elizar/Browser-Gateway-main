@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../theme/ThemeContext";
 import type { AccentId, Appearance } from "../theme/themes";
+import { Segmented } from "./ui";
 import { IconCheck, IconTerminal } from "./ui/icons";
 
 const APPEARANCES: Exclude<Appearance, "hacker">[] = ["light", "dark", "auto"];
@@ -10,30 +11,14 @@ export function ThemePicker() {
   const { appearance, accent, accents, setAppearance, setAccent, isHacker } = useTheme();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <div className="field-label mb-2">{t("theme.appearance")}</div>
-        <div className="inline-flex rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] p-1">
-          {APPEARANCES.map((a) => {
-            const active = appearance === a;
-            return (
-              <button
-                key={a}
-                type="button"
-                onClick={() => setAppearance(a)}
-                aria-pressed={active}
-                className={[
-                  "rounded-[calc(var(--radius-md)-4px)] px-4 py-1.5 text-sm font-medium transition",
-                  active
-                    ? "bg-[var(--color-panel)] text-[var(--color-snow)] shadow-[var(--shadow-sm)]"
-                    : "text-[var(--color-fog)] hover:text-[var(--color-snow)]",
-                ].join(" ")}
-              >
-                {t(`theme.mode.${a}`)}
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          options={APPEARANCES.map((a) => ({ value: a, label: t(`theme.mode.${a}`) }))}
+          value={appearance as Exclude<Appearance, "hacker">}
+          onChange={setAppearance}
+        />
       </div>
 
       <div className={isHacker ? "opacity-40" : ""}>

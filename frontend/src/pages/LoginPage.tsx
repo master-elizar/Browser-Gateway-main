@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthContext";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { api } from "../api/client";
-import { Alert, Button, Field, Input } from "../components/ui";
+import { Alert, Button, Field, Input, Segmented } from "../components/ui";
 import { IconSessions } from "../components/ui/icons";
 
 export function LoginPage() {
@@ -65,24 +65,17 @@ export function LoginPage() {
         </div>
 
         <form onSubmit={onSubmit} className="ui-card space-y-4 p-6">
-          <div className="flex gap-1 rounded-[var(--radius-md)] bg-[var(--color-panel-2)] p-1">
-            <button
-              type="button"
-              className={tabClass(mode === "login")}
-              onClick={() => setMode("login")}
-            >
-              {t("login.title")}
-            </button>
-            <button
-              type="button"
-              className={tabClass(mode === "register")}
-              onClick={() => setMode("register")}
-            >
-              {t("login.register")}
-            </button>
-          </div>
+          <Segmented
+            fullWidth
+            options={[
+              { value: "login" as const, label: t("login.title") },
+              { value: "register" as const, label: t("login.register") },
+            ]}
+            value={mode}
+            onChange={setMode}
+          />
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {mode === "register" && (
               <Field label={t("login.displayName")}>
                 <Input
@@ -129,13 +122,4 @@ export function LoginPage() {
       </div>
     </div>
   );
-}
-
-function tabClass(active: boolean) {
-  return [
-    "flex-1 rounded-[calc(var(--radius-md)-4px)] px-3 py-1.5 text-sm font-medium transition",
-    active
-      ? "bg-[var(--color-panel)] text-[var(--color-snow)] shadow-[var(--shadow-sm)]"
-      : "text-[var(--color-fog)] hover:text-[var(--color-snow)]",
-  ].join(" ");
 }

@@ -252,7 +252,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
             )}
 
             {step === "hardware" && (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <Field
                   label={`${t("launch.memory")} (${draft.memoryMb} MB)`}
                   hint={t("launch.memoryHint")}
@@ -336,7 +336,7 @@ export function LaunchConstructor({ open, busy, accessToken, onClose, onLaunch }
             )}
 
             {step === "review" && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <p className="text-xs text-[var(--color-muted)]">{t("launch.reviewHint")}</p>
                 <dl className="divide-y divide-[var(--color-line)] rounded-[var(--radius-md)] border border-[var(--color-line)]">
                   {[
