@@ -27,6 +27,7 @@ async def run() -> None:
     try:
         import numpy as np
         from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+        from aiortc.sdp import candidate_from_sdp
         from av import VideoFrame
         from mss import mss
         import websockets
@@ -134,14 +135,21 @@ async def run() -> None:
                         peer = await ensure_pc()
                         c = msg["candidate"]
                         try:
-                            await peer.addIceCandidate(
-                                {
-                                    "sdpMid": c.get("sdpMid"),
-                                    "sdpMLineIndex": c.get("sdpMLineIndex"),
-                                    "candidate": c.get("candidate"),
-                                }
-                            )
-                            print("[webrtc] remote ICE candidate added", flush=True)
+                            # aiortc.addIceCandidate() takes an RTCIceCandidate object (attribute
+                            # access), not the plain dict the browser's WebRTC API sends -- that
+                            # mismatch ("'dict' object has no attribute 'sdpMid'") was silently
+                            # dropping every single candidate, so ICE could never complete even
+                            # though the SDP offer/answer exchange itself was working fine.
+                            raw_sdp = (c.get("candidate") or "").strip()
+                            if not raw_sdp:
+                                print("[webrtc] addIce: empty candidate string, skipped", flush=True)
+                            else:
+                                body = raw_sdp[len("candidate:"):] if raw_sdp.startswith("candidate:") else raw_sdp
+                                candidate = candidate_from_sdp(body)
+                                candidate.sdpMid = c.get("sdpMid")
+                                candidate.sdpMLineIndex = c.get("sdpMLineIndex")
+                                await peer.addIceCandidate(candidate)
+                                print("[webrtc] remote ICE candidate added", flush=True)
                         except Exception as exc:  # noqa: BLE001
                             print(f"[webrtc] addIce: {exc}", flush=True)
                     elif typ == "ready":
