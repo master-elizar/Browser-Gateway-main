@@ -23,7 +23,7 @@ export function ThemePicker() {
       </div>
 
       <div className={isHacker ? "opacity-40" : ""}>
-        <div className="field-label mb-2">{t("theme.accent")}</div>
+        <div className="field-label mb-2">{t("theme.accentLabel")}</div>
         <div className="flex flex-wrap gap-2.5">
           {accents.map((a) => {
             const active = !isHacker && accent === a.id;

@@ -11,7 +11,9 @@
     "account": "Аккаунт",
     "logout": "Выйти",
     "admin": "Админ",
-    "workspace": "Рабочая область"
+    "workspace": "Рабочая область",
+    "collapse": "Свернуть",
+    "expand": "Развернуть"
   },
   "login": {
     "title": "Вход",
@@ -463,7 +465,8 @@
     "density": "Плотность",
     "densityCompact": "Компактно",
     "densityRegular": "Обычно",
-    "densitySpacious": "Просторно"
+    "densitySpacious": "Просторно",
+    "accentLabel": "Акцентный цвет"
   },
   "motion": {
     "title": "Анимации и эффекты",

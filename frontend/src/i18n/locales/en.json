@@ -11,7 +11,9 @@
     "account": "Account",
     "logout": "Log out",
     "admin": "Admin",
-    "workspace": "Workspace"
+    "workspace": "Workspace",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "login": {
     "title": "Sign in",
@@ -463,7 +465,8 @@
     "density": "Density",
     "densityCompact": "Compact",
     "densityRegular": "Regular",
-    "densitySpacious": "Spacious"
+    "densitySpacious": "Spacious",
+    "accentLabel": "Accent color"
   },
   "motion": {
     "title": "Motion & effects",
