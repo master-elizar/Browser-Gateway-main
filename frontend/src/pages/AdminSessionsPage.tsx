@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, type BrowserSession } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { usePolling } from "../hooks/usePolling";
 import { Alert, Badge, Button, EmptyState, PageHeader } from "../components/ui";
 import { DataTable } from "../components/ui/DataTable";
 import { IconEmpty, IconRefresh } from "../components/ui/icons";
@@ -14,6 +15,13 @@ function statusTone(status: string): "success" | "warn" | "danger" | "neutral" |
   if (s.includes("pend") || s.includes("creat") || s.includes("start") || s.includes("idle")) return "warn";
   if (s.includes("stop") || s.includes("end")) return "neutral";
   return "accent";
+}
+
+function hasTransientStatus(items: BrowserSession[]): boolean {
+  return items.some((s) => {
+    const v = s.status.toLowerCase();
+    return v.includes("creat") || v.includes("start") || v.includes("stop");
+  });
 }
 
 export function AdminSessionsPage() {
@@ -33,11 +41,9 @@ export function AdminSessionsPage() {
     }
   }, [accessToken]);
 
-  useEffect(() => {
-    void refresh();
-    const timer = setInterval(() => void refresh(), 5000);
-    return () => clearInterval(timer);
-  }, [refresh]);
+  usePolling(refresh, () => (hasTransientStatus(items) ? 3000 : 15000), {
+    enabled: Boolean(accessToken),
+  });
 
   async function stop(id: string) {
     if (!accessToken) return;

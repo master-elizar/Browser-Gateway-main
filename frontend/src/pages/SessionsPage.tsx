@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, type BrowserSession, type CreateSessionInput } from "../api/client";
 import { useAuth, isNotImplemented } from "../auth/AuthContext";
 import { LaunchConstructor } from "../components/LaunchConstructor";
+import { usePolling } from "../hooks/usePolling";
 import {
   Alert,
   Badge,
@@ -23,6 +24,16 @@ function statusTone(status: string): "success" | "warn" | "danger" | "neutral" |
   if (s.includes("pend") || s.includes("creat") || s.includes("start")) return "warn";
   if (s.includes("stop") || s.includes("end")) return "neutral";
   return "accent";
+}
+
+// While any session is mid-transition (booting or tearing down), poll tight enough to
+// catch it landing on RUNNING within a few seconds. Once everything's stable, back off --
+// a slow keepalive poll still catches server-side drift (admin stop, idle timeout).
+function hasTransientStatus(items: BrowserSession[]): boolean {
+  return items.some((s) => {
+    const v = s.status.toLowerCase();
+    return v.includes("creat") || v.includes("start") || v.includes("stop");
+  });
 }
 
 export function SessionsPage() {
@@ -55,9 +66,9 @@ export function SessionsPage() {
     }
   }, [accessToken, t]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  usePolling(refresh, () => (hasTransientStatus(items) ? 3000 : 15000), {
+    enabled: Boolean(accessToken),
+  });
 
   async function launch(input: CreateSessionInput) {
     setBusy(true);

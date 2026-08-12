@@ -12,6 +12,8 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { WebRTCViewer } from "../components/WebRTCViewer";
 import { SessionNetworkPanel, type NetTab } from "../components/SessionNetworkPanel";
+import { usePolling } from "../hooks/usePolling";
+import { backoffMs } from "../lib/reconnect";
 
 type FitMode = "fit" | "stretch";
 type StreamMode = "webrtc" | "novnc";
@@ -117,31 +119,28 @@ export function SessionViewerPage() {
     if (!features.viewerDownloadsEnabled) setShowDownloads(false);
   }, [features.viewerDownloadsEnabled]);
 
-  useEffect(() => {
-    if (!accessToken || !id) return;
-    let alive = true;
-    const tick = async () => {
+  usePolling(
+    async () => {
+      if (!accessToken || !id) return;
       try {
         const s = await api.getSession(accessToken, id);
-        if (alive) {
-          setSession(s);
-          setError(null);
-        }
+        setSession(s);
+        setError(null);
       } catch (err) {
-        if (alive) setError(err instanceof Error ? err.message : "error");
+        setError(err instanceof Error ? err.message : "error");
       }
-    };
-    void tick();
-    const timer = setInterval(() => void tick(), 2000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
-  }, [accessToken, id]);
+    },
+    () => (session?.status === "RUNNING" || session?.status === "IDLE" ? 6000 : 2000),
+    { enabled: Boolean(accessToken && id) },
+  );
 
   useEffect(() => {
     if (!features.viewerNetworkEnabled || !accessToken || !id || session?.status !== "RUNNING") return;
     let closed = false;
+    let attempt = 0;
+    let reconnectTimer: number | undefined;
+    let ws: WebSocket | null = null;
+
     const load = async () => {
       try {
         const res = await api.listNetworkEvents(accessToken, id);
@@ -153,21 +152,41 @@ export function SessionViewerPage() {
     void load();
 
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const ws = new WebSocket(
-      `${proto}://${window.location.host}/ws/sessions/${id}/netmon?token=${encodeURIComponent(accessToken)}`,
-    );
-    ws.onmessage = (msg) => {
-      try {
-        const ev = JSON.parse(String(msg.data)) as NetworkEventItem;
-        if (!ev.type || ev.type === "status") return;
-        setEvents((prev) => [...prev.slice(-399), ev]);
-      } catch {
-        /* ignore */
-      }
-    };
+
+    function connect() {
+      ws = new WebSocket(
+        `${proto}://${window.location.host}/ws/sessions/${id}/netmon?token=${encodeURIComponent(accessToken)}`,
+      );
+      ws.onopen = () => {
+        attempt = 0;
+      };
+      ws.onmessage = (msg) => {
+        try {
+          const ev = JSON.parse(String(msg.data)) as NetworkEventItem;
+          if (!ev.type || ev.type === "status") return;
+          setEvents((prev) => [...prev.slice(-399), ev]);
+        } catch {
+          /* ignore */
+        }
+      };
+      // The hub silently drops the connection on backend restarts, proxy idle timeouts,
+      // or a network blip -- reconnect instead of leaving the traffic panel frozen.
+      ws.onclose = () => {
+        if (closed) return;
+        reconnectTimer = window.setTimeout(() => {
+          if (closed) return;
+          attempt += 1;
+          connect();
+        }, backoffMs(attempt));
+      };
+      ws.onerror = () => ws?.close();
+    }
+    connect();
+
     return () => {
       closed = true;
-      ws.close();
+      window.clearTimeout(reconnectTimer);
+      ws?.close();
     };
   }, [accessToken, id, session?.status, features.viewerNetworkEnabled]);
 
