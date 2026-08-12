@@ -1,9 +1,4 @@
 const STORAGE_KEY = "bg.motion";
-const DENSITY_KEY = "bg.particles";
-
-export const PARTICLE_MIN = 12;
-export const PARTICLE_MAX = 160;
-export const PARTICLE_DEFAULT = 64;
 
 export function readMotionEnabled(): boolean {
   try {
@@ -22,29 +17,6 @@ export function readMotionEnabled(): boolean {
 export function storeMotionEnabled(enabled: boolean) {
   try {
     localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0");
-  } catch {
-    /* ignore */
-  }
-}
-
-export function clampParticleCount(n: number): number {
-  if (!Number.isFinite(n)) return PARTICLE_DEFAULT;
-  return Math.max(PARTICLE_MIN, Math.min(PARTICLE_MAX, Math.round(n)));
-}
-
-export function readParticleCount(): number {
-  try {
-    const v = localStorage.getItem(DENSITY_KEY);
-    if (v != null && v !== "") return clampParticleCount(Number(v));
-  } catch {
-    /* ignore */
-  }
-  return PARTICLE_DEFAULT;
-}
-
-export function storeParticleCount(n: number) {
-  try {
-    localStorage.setItem(DENSITY_KEY, String(clampParticleCount(n)));
   } catch {
     /* ignore */
   }

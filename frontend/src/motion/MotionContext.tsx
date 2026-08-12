@@ -6,20 +6,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import {
-  applyMotionAttr,
-  clampParticleCount,
-  readMotionEnabled,
-  readParticleCount,
-  storeMotionEnabled,
-  storeParticleCount,
-} from "./prefs";
+import { applyMotionAttr, readMotionEnabled, storeMotionEnabled } from "./prefs";
 
 type MotionCtx = {
   motionEnabled: boolean;
   setMotionEnabled: (on: boolean) => void;
-  particleCount: number;
-  setParticleCount: (n: number) => void;
 };
 
 const Ctx = createContext<MotionCtx | null>(null);
@@ -28,7 +19,6 @@ applyMotionAttr(readMotionEnabled());
 
 export function MotionProvider({ children }: { children: ReactNode }) {
   const [motionEnabled, setState] = useState(() => readMotionEnabled());
-  const [particleCount, setParticleState] = useState(() => readParticleCount());
 
   const setMotionEnabled = useCallback((on: boolean) => {
     applyMotionAttr(on);
@@ -36,16 +26,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
     setState(on);
   }, []);
 
-  const setParticleCount = useCallback((n: number) => {
-    const next = clampParticleCount(n);
-    storeParticleCount(next);
-    setParticleState(next);
-  }, []);
-
-  const value = useMemo(
-    () => ({ motionEnabled, setMotionEnabled, particleCount, setParticleCount }),
-    [motionEnabled, setMotionEnabled, particleCount, setParticleCount],
-  );
+  const value = useMemo(() => ({ motionEnabled, setMotionEnabled }), [motionEnabled, setMotionEnabled]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

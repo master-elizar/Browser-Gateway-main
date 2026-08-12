@@ -462,14 +462,7 @@
     "title": "Motion & effects",
     "subtitle": "Page transitions and interface motion.",
     "enable": "Enable animations",
-    "hint": "Route transitions and interactive feedback. Saved in this browser.",
-    "particlesHackerOnly": "Particle field is part of Hacker mode — switch to it above to preview and tune it.",
-    "particles": "Particle density",
-    "particlesHint": "Preferred count. On small screens the UI automatically lowers density, skips link lines, and runs at ~30fps.",
-    "presetLow": "Low",
-    "presetMed": "Medium",
-    "presetHigh": "High",
-    "presetMax": "Max"
+    "hint": "Route transitions and interactive feedback. Saved in this browser."
   },
   "common": {
     "loading": "Loading…",
