@@ -26,6 +26,18 @@ def gateway_ws_url() -> str:
     return f"{base}/ws/sessions/{SESSION_ID}/signaling?role=agent&token={AGENT_TOKEN}"
 
 
+def log(msg: str) -> None:
+    # No timestamps on any of this file's prints previously -- made it impossible to tell
+    # whether repeated offer/answer cycles were seconds or milliseconds apart.
+    print(f"[{time.time():.3f}] [webrtc] {msg}", flush=True)
+
+
+def pc_tag(peer) -> str:  # type: ignore[no-untyped-def]
+    # Short identity tag so logs can show whether the SAME RTCPeerConnection is being
+    # reused across offer cycles or a fresh one was created each time.
+    return f"pc#{id(peer) & 0xFFFF:04x}"
+
+
 async def run() -> None:
     try:
         import numpy as np
@@ -43,7 +55,7 @@ async def run() -> None:
     except Exception as exc:  # noqa: BLE001
         # This process is launched once by entrypoint.sh and never restarted if it exits --
         # if this fires, WebRTC is silently dead for the rest of the container's life.
-        print(f"[webrtc] FATAL: dependency import failed, WebRTC disabled for this session: {exc!r}", flush=True)
+        log(f"FATAL: dependency import failed, WebRTC disabled for this session: {exc!r}")
         traceback.print_exc()
         return
 
@@ -81,7 +93,7 @@ async def run() -> None:
         # browser gets from GET /api/webrtc/ice, so both sides can actually meet on it.
         urls = [u.strip() for u in TURN_URLS.split(",") if u.strip()]
         if not urls:
-            print("[webrtc] no TURN_URLS configured for the agent side -- only host candidates", flush=True)
+            log("no TURN_URLS configured for the agent side -- only host candidates")
             return RTCConfiguration(iceServers=[])
         return RTCConfiguration(
             iceServers=[RTCIceServer(urls=urls, username=TURN_USERNAME, credential=TURN_PASSWORD)]
@@ -97,21 +109,24 @@ async def run() -> None:
         # loop with "Cannot handle offer in signaling state closed" / "RTCPeerConnection is
         # closed" instead of just handling the new offer.
         if pc is not None and pc.connectionState not in ("closed", "failed"):
+            log(f"ensure_pc: reusing {pc_tag(pc)} (state={pc.connectionState})")
             return pc
+        prior = pc_tag(pc) if pc is not None else None
         pc = RTCPeerConnection(configuration=ice_configuration())
         pc.addTrack(X11Track())
+        log(f"ensure_pc: created {pc_tag(pc)}" + (f" (prior {prior} was stale)" if prior else " (first pc)"))
 
         @pc.on("connectionstatechange")
         async def on_state() -> None:
-            print(f"[webrtc] state={pc.connectionState}", flush=True)
+            log(f"{pc_tag(pc)} state={pc.connectionState} ice={pc.iceConnectionState}")
 
         @pc.on("icecandidate")
         async def on_ice(candidate) -> None:  # type: ignore[no-untyped-def]
             if candidate is None:
-                print("[webrtc] local ICE gathering complete", flush=True)
+                log(f"{pc_tag(pc)} local ICE gathering complete")
                 return
             if ws_holder["ws"] is None:
-                print("[webrtc] local ICE candidate ready but signaling is not connected, dropped", flush=True)
+                log(f"{pc_tag(pc)} local ICE candidate ready but signaling is not connected, dropped")
                 return
             try:
                 await ws_holder["ws"].send(
@@ -126,20 +141,20 @@ async def run() -> None:
                         }
                     )
                 )
-                print("[webrtc] local ICE candidate sent", flush=True)
+                log(f"{pc_tag(pc)} local ICE candidate sent")
             except Exception as exc:  # noqa: BLE001
-                print(f"[webrtc] ice send: {exc}", flush=True)
+                log(f"{pc_tag(pc)} ice send: {exc}")
 
         return pc
 
     ws_holder: dict = {"ws": None}
     url = gateway_ws_url()
-    print(f"[webrtc] connecting signaling {url}", flush=True)
+    log(f"connecting signaling {url}")
     while True:
         try:
             async with websockets.connect(url, open_timeout=10, max_size=8 * 1024 * 1024) as ws:
                 ws_holder["ws"] = ws
-                print("[webrtc] signaling connected", flush=True)
+                log("signaling connected")
                 async for raw in ws:
                     try:
                         msg = json.loads(raw)
@@ -147,7 +162,7 @@ async def run() -> None:
                         continue
                     typ = msg.get("type")
                     if typ == "offer":
-                        print(f"[webrtc] offer received (sdp len={len(msg.get('sdp') or '')})", flush=True)
+                        log(f"offer received (sdp len={len(msg.get('sdp') or '')})")
                         peer = await ensure_pc()
                         offer = RTCSessionDescription(sdp=msg["sdp"], type="offer")
                         await peer.setRemoteDescription(offer)
@@ -156,10 +171,10 @@ async def run() -> None:
                         await ws.send(
                             json.dumps({"type": "answer", "sdp": peer.localDescription.sdp})
                         )
-                        print("[webrtc] answer sent", flush=True)
+                        log(f"{pc_tag(peer)} answer sent")
                     elif typ == "ice" and msg.get("candidate"):
-                        print("[webrtc] remote ICE candidate received", flush=True)
                         peer = await ensure_pc()
+                        log(f"{pc_tag(peer)} remote ICE candidate received")
                         c = msg["candidate"]
                         try:
                             # aiortc.addIceCandidate() takes an RTCIceCandidate object (attribute
@@ -169,26 +184,30 @@ async def run() -> None:
                             # though the SDP offer/answer exchange itself was working fine.
                             raw_sdp = (c.get("candidate") or "").strip()
                             if not raw_sdp:
-                                print("[webrtc] addIce: empty candidate string, skipped", flush=True)
+                                log(f"{pc_tag(peer)} addIce: empty candidate string, skipped")
                             else:
                                 body = raw_sdp[len("candidate:"):] if raw_sdp.startswith("candidate:") else raw_sdp
                                 candidate = candidate_from_sdp(body)
                                 candidate.sdpMid = c.get("sdpMid")
                                 candidate.sdpMLineIndex = c.get("sdpMLineIndex")
                                 await peer.addIceCandidate(candidate)
-                                print("[webrtc] remote ICE candidate added", flush=True)
+                                log(f"{pc_tag(peer)} remote ICE candidate added")
                         except Exception as exc:  # noqa: BLE001
-                            print(f"[webrtc] addIce: {exc}", flush=True)
+                            log(f"{pc_tag(peer)} addIce: {exc}")
                     elif typ == "ready":
-                        print("[webrtc] signaling hub acked registration (role=agent)", flush=True)
+                        log("signaling hub acked registration (role=agent)")
                         continue
                     elif typ == "peer-missing":
-                        print("[webrtc] signaling hub: no viewer connected yet for this session", flush=True)
+                        # The hub drops (does not queue) whatever message triggered this --
+                        # if it was our answer/ICE candidate, the viewer never received it and
+                        # this side has no retry for its own outgoing messages the way the
+                        # viewer's scheduleOfferRetry does for its offer.
+                        log("signaling hub: no viewer connected yet for this session -- last outgoing message was dropped, not queued")
                         continue
                     else:
-                        print(f"[webrtc] unhandled signaling message type={typ!r}", flush=True)
+                        log(f"unhandled signaling message type={typ!r}")
         except Exception as exc:  # noqa: BLE001
-            print(f"[webrtc] loop: {exc}", flush=True)
+            log(f"loop: {exc}")
             traceback.print_exc()
             pc = None
             ws_holder["ws"] = None

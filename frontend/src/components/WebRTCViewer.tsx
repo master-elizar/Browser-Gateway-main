@@ -9,6 +9,16 @@ type Props = {
   onError?: (msg: string) => void;
 };
 
+// No console output anywhere in this component previously -- when WebRTC gets stuck on
+// "connecting" over a real network there is zero visibility into whether the effect
+// restarted, the signaling socket dropped, or an offer was a fresh createOffer() vs a
+// resend of the cached one. logId is a short per-effect-run tag so a log dump can tell
+// those apart at a glance.
+function log(logId: string, msg: string) {
+  // eslint-disable-next-line no-console
+  console.log(`[${(performance.now() / 1000).toFixed(3)}] [webrtc:${logId}] ${msg}`);
+}
+
 export function WebRTCViewer({ sessionId, accessToken, className, onError }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [status, setStatus] = useState("connecting");
@@ -17,6 +27,8 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
   const ctrlRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    const logId = Math.random().toString(36).slice(2, 7);
+    log(logId, "effect run (mount or a dependency changed)");
     let cancelled = false;
     let sigAttempt = 0;
     let ctrlAttempt = 0;
@@ -33,9 +45,14 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         lastOfferSdp = offer.sdp ?? null;
+        log(logId, `sendOffer: fresh createOffer (sdp len=${lastOfferSdp?.length ?? 0})`);
+      } else {
+        log(logId, `sendOffer: resending cached offer (sdp len=${lastOfferSdp.length})`);
       }
       if (lastOfferSdp && sig.readyState === WebSocket.OPEN) {
         sig.send(JSON.stringify({ type: "offer", sdp: lastOfferSdp }));
+      } else {
+        log(logId, `sendOffer: sig not open (readyState=${sig.readyState}), not sent`);
       }
     }
 
@@ -44,6 +61,7 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
     // offer can vanish and it just sits on "connecting" forever.
     function scheduleOfferRetry(pc: RTCPeerConnection, sig: WebSocket) {
       if (cancelled || answered) return;
+      log(logId, "peer-missing received, scheduling offer retry in 1500ms");
       window.clearTimeout(offerRetryTimer);
       offerRetryTimer = window.setTimeout(() => {
         if (cancelled || answered) return;
@@ -56,9 +74,11 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
         `${proto}://${host}/ws/sessions/${sessionId}/signaling?token=${encodeURIComponent(accessToken)}`,
       );
       sigRef.current = sig;
+      log(logId, `signaling: connecting (attempt ${sigAttempt})`);
 
       sig.onopen = () => {
         sigAttempt = 0;
+        log(logId, "signaling: open");
         // Only (re)send the offer if we haven't connected yet -- a reconnect after the
         // handshake already succeeded shouldn't re-trigger renegotiation on the agent.
         if (!answered) void sendOffer(pc, sig);
@@ -72,6 +92,7 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
             candidate?: RTCIceCandidateInit;
           };
           if (data.type === "answer" && data.sdp) {
+            log(logId, `signaling: answer received (sdp len=${data.sdp.length}), answered=true`);
             answered = true;
             window.clearTimeout(offerRetryTimer);
             await pc.setRemoteDescription({ type: "answer", sdp: data.sdp });
@@ -79,13 +100,16 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
             await pc.addIceCandidate(data.candidate);
           } else if (data.type === "peer-missing") {
             scheduleOfferRetry(pc, sig);
+          } else {
+            log(logId, `signaling: message type=${data.type}`);
           }
         } catch (err) {
           onError?.(err instanceof Error ? err.message : "webrtc signal error");
         }
       };
 
-      sig.onclose = () => {
+      sig.onclose = (ev) => {
+        log(logId, `signaling: closed (code=${ev.code}, reason=${ev.reason || "none"}, answered=${answered})`);
         if (cancelled) return;
         sigReconnectTimer = window.setTimeout(() => {
           if (cancelled) return;
@@ -120,6 +144,7 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
         const ice = await api.getIceServers(accessToken);
         if (cancelled) return;
         const pc = new RTCPeerConnection({ iceServers: ice.iceServers });
+        log(logId, `pc created, iceServers=${JSON.stringify(ice.iceServers)}`);
         pcRef.current = pc;
         pc.addTransceiver("video", { direction: "recvonly" });
         pc.ontrack = (ev) => {
@@ -129,10 +154,20 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
             setStatus("live");
           }
         };
-        pc.onconnectionstatechange = () => setStatus(pc.connectionState);
+        pc.onconnectionstatechange = () => {
+          log(logId, `pc connectionState=${pc.connectionState} iceConnectionState=${pc.iceConnectionState}`);
+          setStatus(pc.connectionState);
+        };
         pc.onicecandidate = (ev) => {
+          if (!ev.candidate) {
+            log(logId, "local ICE gathering complete");
+            return;
+          }
           const sig = sigRef.current;
-          if (!ev.candidate || !sig || sig.readyState !== WebSocket.OPEN) return;
+          if (!sig || sig.readyState !== WebSocket.OPEN) {
+            log(logId, "local ICE candidate ready but signaling not open, dropped");
+            return;
+          }
           sig.send(
             JSON.stringify({
               type: "ice",
@@ -159,6 +194,7 @@ export function WebRTCViewer({ sessionId, accessToken, className, onError }: Pro
 
     void start();
     return () => {
+      log(logId, "effect cleanup (unmount or a dependency changed)");
       cancelled = true;
       window.clearTimeout(sigReconnectTimer);
       window.clearTimeout(ctrlReconnectTimer);
