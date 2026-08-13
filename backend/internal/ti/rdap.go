@@ -14,11 +14,15 @@ import (
 // the provider registry/aggregation (no malicious/clean concept applies to it). Reserved
 // for the domain-check tab's advanced-mode view.
 type WhoisInfo struct {
-	Domain      string    `json:"domain"`
-	Registrar   string    `json:"registrar,omitempty"`
-	Registered  time.Time `json:"registered,omitempty"`
-	Expires     time.Time `json:"expires,omitempty"`
-	Nameservers []string  `json:"nameservers,omitempty"`
+	Domain    string `json:"domain"`
+	Registrar string `json:"registrar,omitempty"`
+	// Pointers, not time.Time -- encoding/json's omitempty never treats a struct (including
+	// the zero time.Time) as empty, so a plain time.Time field would always serialize even
+	// when RDAP had no registration/expiration event, sending the frontend a fake
+	// "0001-01-01" date instead of just omitting the field.
+	Registered  *time.Time `json:"registered,omitempty"`
+	Expires     *time.Time `json:"expires,omitempty"`
+	Nameservers []string   `json:"nameservers,omitempty"`
 }
 
 type rdapResponse struct {
@@ -74,9 +78,11 @@ func (s *Service) LookupRDAP(ctx context.Context, domainName string) (*WhoisInfo
 		}
 		switch ev.EventAction {
 		case "registration":
-			info.Registered = t
+			registered := t
+			info.Registered = &registered
 		case "expiration":
-			info.Expires = t
+			expires := t
+			info.Expires = &expires
 		}
 	}
 	for _, e := range resp.Entities {

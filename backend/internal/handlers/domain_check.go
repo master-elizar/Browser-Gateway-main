@@ -17,18 +17,19 @@ type domainCheckReq struct {
 }
 
 type domainCheckResp struct {
-	Kind      string        `json:"kind"`
-	Indicator string        `json:"indicator"`
+	Kind      string `json:"kind"`
+	Indicator string `json:"indicator"`
 	// Tier is the simple-mode verdict: safe | suspicious | malicious | unknown ("unknown"
 	// only when Total is 0 -- no source could be queried at all, not the same as "safe").
-	Tier      string        `json:"tier"`
-	Malicious int           `json:"malicious"` // M -- providers whose own verdict was "malicious"
-	Total     int           `json:"total"`      // N -- providers successfully queried (excludes no-key-skipped, errored, informational)
-	Providers []ti.Result   `json:"providers"`   // every provider actually queried, including informational/errored, for advanced mode
-	Whois     *ti.WhoisInfo `json:"whois,omitempty"`
-	WhoisError string       `json:"whoisError,omitempty"`
-	Cached    bool          `json:"cached"`
-	CheckedAt time.Time     `json:"checkedAt"`
+	Tier       string        `json:"tier"`
+	Malicious  int           `json:"malicious"`  // M -- providers whose own verdict was "malicious"
+	Suspicious int           `json:"suspicious"` // S -- providers whose own verdict was "suspicious"
+	Total      int           `json:"total"`       // N -- providers successfully queried (excludes no-key-skipped, errored, informational)
+	Providers  []ti.Result   `json:"providers"`   // every provider actually queried, including informational/errored, for advanced mode
+	Whois      *ti.WhoisInfo `json:"whois,omitempty"`
+	WhoisError string        `json:"whoisError,omitempty"`
+	Cached     bool          `json:"cached"`
+	CheckedAt  time.Time     `json:"checkedAt"`
 }
 
 // domainCheckCacheTTL is deliberately much shorter than ti.Service's own 24h per-provider DB
@@ -106,13 +107,14 @@ func (h *Handler) TICheck(c *fiber.Ctx) error {
 	// res.Malicious is exactly M.
 	total := res.Malicious + res.Suspicious + res.Harmless + res.Undetected
 	resp := domainCheckResp{
-		Kind:      res.Kind,
-		Indicator: res.Indicator,
-		Malicious: res.Malicious,
-		Total:     total,
-		Providers: res.Providers,
-		CheckedAt: res.CheckedAt,
-		Tier:      domainCheckTier(res.Malicious, res.Suspicious, total),
+		Kind:       res.Kind,
+		Indicator:  res.Indicator,
+		Malicious:  res.Malicious,
+		Suspicious: res.Suspicious,
+		Total:      total,
+		Providers:  res.Providers,
+		CheckedAt:  res.CheckedAt,
+		Tier:       domainCheckTier(res.Malicious, res.Suspicious, total),
 	}
 
 	if k == ti.KindDomain {

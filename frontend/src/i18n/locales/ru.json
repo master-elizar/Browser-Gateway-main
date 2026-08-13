@@ -4,6 +4,7 @@
   "nav": {
     "sessions": "Сессии",
     "history": "История",
+    "domainCheck": "Проверка домена",
     "users": "Пользователи",
     "allSessions": "Все сессии",
     "settings": "Настройки",
@@ -506,6 +507,40 @@
       "safebrowsing": "Google Safe Browsing",
       "malwarebazaar": "MalwareBazaar"
     }
+  },
+  "domainCheck": {
+    "title": "Проверка домена",
+    "subtitle": "Проверьте домен сразу по всем настроенным источникам threat intelligence.",
+    "inputLabel": "Домен",
+    "inputPlaceholder": "example.com",
+    "checkButton": "Проверить",
+    "checking": "Проверяю…",
+    "error": "Не удалось проверить домен",
+    "tier": {
+      "safe": "Безопасен",
+      "suspicious": "Подозрительный",
+      "malicious": "Вредоносный",
+      "unknown": "Недостаточно данных"
+    },
+    "word": {
+      "malicious": "вредоносным",
+      "suspicious": "подозрительным"
+    },
+    "verdictSentence": "{{count}} из {{total}} источников считают домен {{word}}",
+    "insufficientData": "Ни один из настроенных источников не смог ответить на этот запрос.",
+    "cachedNote": "Кэшированный результат за последние несколько минут.",
+    "modeSimple": "Простой",
+    "modeAdvanced": "Расширенный",
+    "whoisTitle": "WHOIS",
+    "whoisRegistrar": "Регистратор",
+    "whoisRegistered": "Зарегистрирован",
+    "whoisExpires": "Истекает",
+    "whoisNameservers": "Nameservers",
+    "whoisUnavailable": "Данные WHOIS для этого домена недоступны.",
+    "providersTitle": "Источники",
+    "providersEmpty": "Ни один источник не был опрошен (проверьте, что хотя бы один включён и настроен в админ-настройках).",
+    "providerInformational": "информационно",
+    "providerError": "ошибка"
   },
   "theme": {
     "title": "Оформление",

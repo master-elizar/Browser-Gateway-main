@@ -97,11 +97,35 @@ export type TIResult = {
   suspicious: number;
   harmless: number;
   undetected: number;
+  detail?: string;
+  informational?: boolean;
   permalink?: string;
   cached?: boolean;
   checkedAt?: string;
   error?: string;
   providers?: TIResult[];
+};
+
+export type WhoisInfo = {
+  domain: string;
+  registrar?: string;
+  registered?: string;
+  expires?: string;
+  nameservers?: string[];
+};
+
+export type DomainCheckResult = {
+  kind: string;
+  indicator: string;
+  tier: "safe" | "suspicious" | "malicious" | "unknown";
+  malicious: number;
+  suspicious: number;
+  total: number;
+  providers: TIResult[];
+  whois?: WhoisInfo;
+  whoisError?: string;
+  cached: boolean;
+  checkedAt: string;
 };
 
 export type AuditEvent = {
@@ -754,6 +778,16 @@ export const api = {
         method: "POST",
         headers: authHeaders(token),
         body: JSON.stringify(body),
+      }),
+    );
+  },
+
+  async checkDomain(token: string, value: string, kind?: string) {
+    return parse<DomainCheckResult>(
+      await fetch("/api/ti/check", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ value, kind }),
       }),
     );
   },

@@ -15,6 +15,7 @@ import {
   IconLogout,
   IconSessions,
   IconSettings,
+  IconShield,
   IconUsers,
 } from "../components/ui/icons";
 
@@ -103,6 +104,7 @@ export function AppShell() {
   const crumb = useMemo(() => {
     const map: Record<string, string> = {
       "/sessions": t("nav.sessions"),
+      "/domain-check": t("nav.domainCheck"),
       "/account": t("nav.account"),
       "/admin/users": t("nav.users"),
       "/admin/sessions": t("nav.allSessions"),
@@ -145,6 +147,12 @@ export function AppShell() {
           )}
           <NavItem to="/sessions" icon={<IconSessions size={17} />} label={t("nav.sessions")} collapsed={collapsed} />
           <NavItem to="/history" icon={<IconAudit size={17} />} label={t("nav.history")} collapsed={collapsed} />
+          <NavItem
+            to="/domain-check"
+            icon={<IconShield size={17} />}
+            label={t("nav.domainCheck")}
+            collapsed={collapsed}
+          />
           <NavItem to="/account" icon={<IconAccount size={17} />} label={t("nav.account")} collapsed={collapsed} />
 
           {isAdmin && (

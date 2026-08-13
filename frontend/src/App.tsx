@@ -7,6 +7,7 @@ import { AdminAuditPage } from "./pages/AdminAuditPage";
 import { AdminSessionsPage } from "./pages/AdminSessionsPage";
 import { AdminSettingsPage } from "./pages/AdminSettingsPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { DomainCheckPage } from "./pages/DomainCheckPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SetupPage } from "./pages/SetupPage";
 import { SessionViewerPage } from "./pages/SessionViewerPage";
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="history" element={<HistoryPage />} />
         <Route path="history/:id" element={<HistoryDetailPage />} />
         <Route path="account" element={<AccountPage />} />
+        <Route path="domain-check" element={<DomainCheckPage />} />
         <Route
           path="admin/users"
           element={
