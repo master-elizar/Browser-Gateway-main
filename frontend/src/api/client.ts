@@ -9,6 +9,7 @@ export type User = {
 };
 
 export type AppSettings = {
+  instanceName?: string;
   maxConcurrentSessionsGlobal: number;
   maxConcurrentSessionsPerUser: number;
   idleTimeoutSec: number;
@@ -58,6 +59,7 @@ export type AppSettings = {
 };
 
 export type ViewerFeatures = {
+  instanceName?: string;
   viewerWebrtcEnabled: boolean;
   viewerNovncEnabled: boolean;
   viewerFitEnabled: boolean;
@@ -336,6 +338,30 @@ export const api = {
         headers: authHeaders(token),
       }),
     );
+  },
+
+  async applyNetwork(token: string, turnUrls: string) {
+    return parse<{ ok: boolean; message: string }>(
+      await fetch("/api/admin/network/apply", {
+        method: "POST",
+        headers: authHeaders(token),
+        body: JSON.stringify({ turnUrls }),
+      }),
+    );
+  },
+
+  async networkStatus(token: string) {
+    return parse<{
+      pending: boolean;
+      progress?: {
+        percent: number;
+        phase: string;
+        message: string;
+        updatedAt?: string;
+        done: boolean;
+        error?: string;
+      };
+    }>(await fetch("/api/admin/network/status", { headers: authHeaders(token) }));
   },
 
   async register(email: string, password: string, displayName?: string) {

@@ -52,6 +52,8 @@ export function AppShell() {
   const [tlsPending, setTlsPending] = useState(false);
   const [restartBusy, setRestartBusy] = useState(false);
   const [collapsed, setCollapsed] = useState(() => readSidebarCollapsed());
+  const [instanceName, setInstanceName] = useState("");
+  const brandName = instanceName || t("brand");
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
@@ -60,6 +62,24 @@ export function AppShell() {
       return next;
     });
   }
+
+  useEffect(() => {
+    if (!accessToken) return;
+    let cancelled = false;
+    void api
+      .getViewerFeatures(accessToken)
+      .then((f) => {
+        if (!cancelled && f.instanceName) setInstanceName(f.instanceName);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken]);
+
+  useEffect(() => {
+    document.title = brandName;
+  }, [brandName]);
 
   useEffect(() => {
     if (!isAdmin || !accessToken) return;
@@ -92,8 +112,8 @@ export function AppShell() {
     if (location.pathname.startsWith("/sessions/") && location.pathname !== "/sessions") {
       return t("viewer.title");
     }
-    return map[location.pathname] || t("brand");
-  }, [location.pathname, t]);
+    return map[location.pathname] || brandName;
+  }, [location.pathname, t, brandName]);
 
   return (
     <div className="relative flex min-h-full">
@@ -110,7 +130,7 @@ export function AppShell() {
           {!collapsed && (
             <div className="min-w-0">
               <div className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-snow)]">
-                {t("brand")}
+                {brandName}
               </div>
               <div className="text-[11px] text-[var(--color-muted)]">{t("tagline")}</div>
             </div>
