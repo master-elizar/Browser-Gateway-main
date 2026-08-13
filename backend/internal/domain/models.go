@@ -65,6 +65,9 @@ func (BrowserSession) TableName() string { return "browser_sessions" }
 
 type AppSettings struct {
 	ID                         uint   `json:"-" gorm:"primaryKey"`
+	// InstanceName overrides the "Browser Gateway" brand text shown in the sidebar/title
+	// once set; empty means "use the default". Set from the setup wizard or admin settings.
+	InstanceName               string `json:"instanceName,omitempty"`
 	MaxConcurrentSessionsGlobal int   `json:"maxConcurrentSessionsGlobal"`
 	MaxConcurrentSessionsPerUser int  `json:"maxConcurrentSessionsPerUser"`
 	IdleTimeoutSec             int    `json:"idleTimeoutSec"`

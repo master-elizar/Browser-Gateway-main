@@ -1,0 +1,8 @@
+[Unit]
+Description=Browser Gateway apply network/TURN configuration
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/opt/browser-gateway/scripts/apply-network.sh

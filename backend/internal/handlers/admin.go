@@ -67,6 +67,9 @@ func (h *Handler) AdminPutSettings(c *fiber.Ctx) error {
 	if err := h.st.DB.First(&s).Error; err != nil {
 		return err
 	}
+	if name := strings.TrimSpace(incoming.InstanceName); name != "" {
+		s.InstanceName = name
+	}
 	if incoming.MaxConcurrentSessionsGlobal > 0 {
 		s.MaxConcurrentSessionsGlobal = incoming.MaxConcurrentSessionsGlobal
 	}

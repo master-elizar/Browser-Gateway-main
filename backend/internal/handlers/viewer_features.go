@@ -9,6 +9,7 @@ import (
 
 func (h *Handler) viewerFeaturesDTO(s domain.AppSettings) fiber.Map {
 	return fiber.Map{
+		"instanceName":                    strings.TrimSpace(s.InstanceName),
 		"viewerWebrtcEnabled":             s.ViewerWebRTCEnabled,
 		"viewerNovncEnabled":              s.ViewerNoVNCEnabled,
 		"viewerFitEnabled":                s.ViewerFitEnabled,

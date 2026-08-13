@@ -39,6 +39,7 @@ type Config struct {
 	TraefikContainer   string
 	SetupKeyFile       string
 	UpdateMarkerFile   string
+	NetworkMarkerFile  string
 	GitHubRepo         string
 }
 
@@ -71,6 +72,7 @@ func Load() (*Config, error) {
 		TraefikContainer:    getEnv("TRAEFIK_CONTAINER_NAME", "browser-gateway-traefik-1"),
 		SetupKeyFile:        getEnv("SETUP_KEY_FILE", "/opt/browser-gateway/data/setup.bootstrap"),
 		UpdateMarkerFile:    getEnv("UPDATE_MARKER_FILE", "/opt/browser-gateway/data/update.requested"),
+		NetworkMarkerFile:   getEnv("NETWORK_MARKER_FILE", "/opt/browser-gateway/data/network.requested"),
 		GitHubRepo:          getEnv("GITHUB_REPO", "master-elizar/Browser-Gateway-main"),
 	}
 

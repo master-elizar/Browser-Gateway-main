@@ -145,6 +145,8 @@ func (h *Handler) Register(app *fiber.App) {
 	admin.Get("/updates", h.AdminCheckUpdates)
 	admin.Post("/updates/apply", h.AdminApplyUpdate)
 	admin.Post("/updates/clear", h.AdminClearUpdate)
+	admin.Post("/network/apply", h.AdminApplyNetwork)
+	admin.Get("/network/status", h.AdminNetworkStatus)
 }
 
 func (h *Handler) Healthz(c *fiber.Ctx) error {

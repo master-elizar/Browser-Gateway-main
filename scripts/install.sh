@@ -303,10 +303,14 @@ step_service() {
     install -m 0644 "$unit_src" /etc/systemd/system/browser-gateway.service
     install -m 0644 "$INSTALL_DIR/packaging/systemd/browser-gateway-update.service" /etc/systemd/system/browser-gateway-update.service
     install -m 0644 "$INSTALL_DIR/packaging/systemd/browser-gateway-update.path" /etc/systemd/system/browser-gateway-update.path
+    install -m 0644 "$INSTALL_DIR/packaging/systemd/browser-gateway-network.service" /etc/systemd/system/browser-gateway-network.service
+    install -m 0644 "$INSTALL_DIR/packaging/systemd/browser-gateway-network.path" /etc/systemd/system/browser-gateway-network.path
     chmod 0755 "$INSTALL_DIR/scripts/apply-update.sh"
+    chmod 0755 "$INSTALL_DIR/scripts/apply-network.sh"
     run_quiet "Failed to reload systemd" systemctl daemon-reload
     run_quiet "Failed to enable service" systemctl enable browser-gateway.service
     run_quiet "Failed to enable update watcher" systemctl enable --now browser-gateway-update.path
+    run_quiet "Failed to enable network watcher" systemctl enable --now browser-gateway-network.path
   fi
   ok_step "Service registered"
 }

@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch Browser Gateway network/TURN configuration requests
+
+[Path]
+PathChanged=/opt/browser-gateway/data/network.requested
+Unit=browser-gateway-network.service
+
+[Install]
+WantedBy=multi-user.target
