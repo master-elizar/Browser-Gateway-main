@@ -585,6 +585,23 @@ export function SessionViewerPage() {
           {note}
         </div>
       )}
+      {session?.status === "DESTROYED" && session?.netTaintChecked && (session.netTaintTotal ?? 0) > 0 && (
+        <div
+          className={
+            (session.netTaintFlagged ?? 0) > 0
+              ? "rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]"
+              : "rounded-lg border border-[var(--color-success)]/40 bg-[var(--color-success)]/10 px-4 py-3 text-sm text-[var(--color-success)]"
+          }
+        >
+          {(session.netTaintFlagged ?? 0) > 0
+            ? t("viewer.netTaintFlagged", {
+                flagged: session.netTaintFlagged,
+                total: session.netTaintTotal,
+                domains: (session.netTaintDomains || []).join(", "),
+              })
+            : t("viewer.netTaintClean", { total: session.netTaintTotal })}
+        </div>
+      )}
 
       {features.viewerDownloadsEnabled && showDownloads && (
         <div className="ui-card p-4">

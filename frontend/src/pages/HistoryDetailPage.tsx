@@ -147,6 +147,23 @@ export function HistoryDetailPage() {
           {error}
         </div>
       )}
+      {sess?.netTaintChecked && (sess.netTaintTotal ?? 0) > 0 && (
+        <div
+          className={
+            (sess.netTaintFlagged ?? 0) > 0
+              ? "rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]"
+              : "rounded-lg border border-[var(--color-success)]/40 bg-[var(--color-success)]/10 px-4 py-3 text-sm text-[var(--color-success)]"
+          }
+        >
+          {(sess.netTaintFlagged ?? 0) > 0
+            ? t("viewer.netTaintFlagged", {
+                flagged: sess.netTaintFlagged,
+                total: sess.netTaintTotal,
+                domains: (sess.netTaintDomains || []).join(", "),
+              })
+            : t("viewer.netTaintClean", { total: sess.netTaintTotal })}
+        </div>
+      )}
 
       <div
         className="relative w-full overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-black shadow-[var(--shadow-md)]"

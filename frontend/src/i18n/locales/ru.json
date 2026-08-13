@@ -241,6 +241,8 @@
     "streamPlaceholder": "WebRTC-поверхность — Stage 7",
     "containerReady": "Контейнер RUNNING.",
     "waitingContainer": "Ждём контейнер…",
+    "netTaintFlagged": "{{flagged}} из {{total}} доменов в трафике этой сессии найдены в базах вредоносных/недоверенных доменов: {{domains}}",
+    "netTaintClean": "Среди {{total}} доменов в трафике этой сессии вредоносных не обнаружено.",
     "streamDisabled": "Поток отключён",
     "streamDisabledHint": "WebRTC и noVNC выключены в настройках администратора.",
     "networkPlaceholder": "DNS + HTTP(S) timeline",

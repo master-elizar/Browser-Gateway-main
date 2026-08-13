@@ -227,6 +227,10 @@ export type BrowserSession = {
   controlUrl?: string;
   streamUrl?: string;
   streamType?: string;
+  netTaintChecked?: boolean;
+  netTaintTotal?: number;
+  netTaintFlagged?: number;
+  netTaintDomains?: string[];
 };
 
 export type CreateSessionInput = {
@@ -834,6 +838,10 @@ export type HistoryDetail = {
     cpus?: number;
     resolution?: string;
     errorReason?: string;
+    netTaintChecked?: boolean;
+    netTaintTotal?: number;
+    netTaintFlagged?: number;
+    netTaintDomains?: string[];
   };
   frames: Array<{
     id: string;

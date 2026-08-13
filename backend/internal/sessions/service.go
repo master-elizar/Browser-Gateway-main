@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/browser-gateway/backend/internal/auth"
 	"github.com/browser-gateway/backend/internal/domain"
 	"github.com/browser-gateway/backend/internal/orchestrator"
+	"github.com/browser-gateway/backend/internal/ti"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -25,10 +27,11 @@ var (
 type Service struct {
 	db   *gorm.DB
 	orch *orchestrator.Orchestrator
+	ti   *ti.Service
 }
 
-func New(db *gorm.DB, orch *orchestrator.Orchestrator) *Service {
-	return &Service{db: db, orch: orch}
+func New(db *gorm.DB, orch *orchestrator.Orchestrator, tiSvc *ti.Service) *Service {
+	return &Service{db: db, orch: orch, ti: tiSvc}
 }
 
 type CreateInput struct {
@@ -65,6 +68,12 @@ type SessionView struct {
 	StartedAt    *time.Time           `json:"startedAt,omitempty"`
 	StoppedAt    *time.Time           `json:"stoppedAt,omitempty"`
 	CreatedAt    time.Time            `json:"createdAt"`
+	// Network taint summary (Stage 18) -- populated asynchronously shortly after the session
+	// stops, checking every domain seen in this session's traffic against Spamhaus/URLhaus.
+	NetTaintChecked bool     `json:"netTaintChecked"`
+	NetTaintTotal   int      `json:"netTaintTotal,omitempty"`
+	NetTaintFlagged int      `json:"netTaintFlagged,omitempty"`
+	NetTaintDomains []string `json:"netTaintDomains,omitempty"`
 	DurationSec  int64                `json:"durationSec,omitempty"`
 	SignalingURL string               `json:"signalingUrl,omitempty"`
 	NetmonURL    string               `json:"netmonUrl,omitempty"`
@@ -127,6 +136,12 @@ func toView(s domain.BrowserSession) SessionView {
 		StartedAt:   s.StartedAt,
 		StoppedAt:   s.StoppedAt,
 		CreatedAt:   s.CreatedAt,
+		NetTaintChecked: s.NetTaintChecked,
+		NetTaintTotal:   s.NetTaintTotal,
+		NetTaintFlagged: s.NetTaintFlagged,
+	}
+	if s.NetTaintDomains != "" {
+		v.NetTaintDomains = strings.Split(s.NetTaintDomains, ",")
 	}
 	if s.StartedAt != nil {
 		end := time.Now()
@@ -383,10 +398,96 @@ func (s *Service) Stop(ctx context.Context, user *domain.User, id string) (*Sess
 		"stopped_at": now,
 	}).Error
 	s.audit(row.OwnerID, row.ID, "session.destroyed", "session destroyed")
+	go s.runNetworkTaintCheck(row.ID)
 
 	_ = s.db.First(&row, "id = ?", id)
 	v := toView(row)
 	return &v, nil
+}
+
+// runNetworkTaintCheck runs asynchronously after a session stops (called from Stop) so it
+// never delays the stop response or an idle/max-duration reaper tick -- Spamhaus/URLhaus are
+// live network calls per domain, and a chatty session can have hundreds of unique hosts.
+// Its result lands on the BrowserSession row a little after the session actually stops; the
+// frontend picks it up on its next poll/fetch of the session or history detail.
+func (s *Service) runNetworkTaintCheck(sessionID string) {
+	if s.ti == nil {
+		return
+	}
+	var settings domain.AppSettings
+	if err := s.db.First(&settings).Error; err != nil || !settings.TiEnabled {
+		return
+	}
+	var events []domain.NetworkEvent
+	if err := s.db.Where("session_id = ?", sessionID).Find(&events).Error; err != nil {
+		return
+	}
+	seen := map[string]struct{}{}
+	domains := make([]string, 0, len(events))
+	for _, ev := range events {
+		for _, d := range extractTaintDomains(ev.Payload) {
+			if _, ok := seen[d]; ok {
+				continue
+			}
+			seen[d] = struct{}{}
+			domains = append(domains, d)
+		}
+	}
+	if len(domains) == 0 {
+		_ = s.db.Model(&domain.BrowserSession{}).Where("id = ?", sessionID).Updates(map[string]any{
+			"net_taint_checked": true,
+			"net_taint_total":   0,
+			"net_taint_flagged": 0,
+		}).Error
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	flagged, total := s.ti.CheckDomainsAgainstOpenBlocklists(ctx, settings, domains)
+	_ = s.db.Model(&domain.BrowserSession{}).Where("id = ?", sessionID).Updates(map[string]any{
+		"net_taint_checked": true,
+		"net_taint_total":   total,
+		"net_taint_flagged": len(flagged),
+		"net_taint_domains": strings.Join(flagged, ","),
+	}).Error
+}
+
+// extractTaintDomains pulls hostnames out of a netmon event payload -- the same url/query
+// fields as handlers.extractIndicators, duplicated locally rather than shared cross-package
+// since it's a small, private parsing detail of this one feature.
+func extractTaintDomains(payloadJSON string) []string {
+	out := []string{}
+	if i := strings.Index(payloadJSON, `"url"`); i >= 0 {
+		if v := jsonStringAfterTaint(payloadJSON, i); v != "" {
+			if u, err := url.Parse(v); err == nil && u.Hostname() != "" {
+				out = append(out, u.Hostname())
+			}
+		}
+	}
+	if i := strings.Index(payloadJSON, `"query"`); i >= 0 {
+		if v := jsonStringAfterTaint(payloadJSON, i); v != "" {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
+func jsonStringAfterTaint(s string, from int) string {
+	rest := s[from:]
+	colon := strings.Index(rest, ":")
+	if colon < 0 {
+		return ""
+	}
+	rest = strings.TrimLeft(rest[colon+1:], " \t\n\r")
+	if !strings.HasPrefix(rest, `"`) {
+		return ""
+	}
+	rest = rest[1:]
+	end := strings.Index(rest, `"`)
+	if end < 0 {
+		return ""
+	}
+	return rest[:end]
 }
 
 func (s *Service) Delete(ctx context.Context, user *domain.User, id string) error {

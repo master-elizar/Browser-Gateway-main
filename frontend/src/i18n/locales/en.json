@@ -241,6 +241,8 @@
     "streamPlaceholder": "WebRTC surface — Stage 7",
     "containerReady": "Container is RUNNING.",
     "waitingContainer": "Waiting for container…",
+    "netTaintFlagged": "{{flagged}} of {{total}} domains seen in this session's traffic are on malicious/untrusted domain lists: {{domains}}",
+    "netTaintClean": "No malicious domains found among {{total}} domains seen in this session's traffic.",
     "streamDisabled": "Streaming is disabled",
     "streamDisabledHint": "WebRTC and noVNC are turned off in admin settings.",
     "networkPlaceholder": "DNS + HTTP(S) timeline",

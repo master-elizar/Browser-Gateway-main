@@ -57,8 +57,15 @@ type BrowserSession struct {
 	StartedAt    *time.Time    `json:"startedAt,omitempty"`
 	StoppedAt    *time.Time    `json:"stoppedAt,omitempty"`
 	LastActiveAt *time.Time    `json:"lastActiveAt,omitempty"`
-	CreatedAt    time.Time     `json:"createdAt"`
-	UpdatedAt    time.Time     `json:"updatedAt"`
+	// Network taint summary (Stage 18): every distinct domain seen in this session's traffic
+	// checked against Spamhaus/URLhaus once the session stops. NetTaintDomains is a
+	// comma-joined list of the flagged domains (capped, see ti.CheckDomainsAgainstOpenBlocklists).
+	NetTaintChecked bool   `json:"netTaintChecked" gorm:"column:net_taint_checked"`
+	NetTaintTotal   int    `json:"netTaintTotal,omitempty" gorm:"column:net_taint_total"`
+	NetTaintFlagged int    `json:"netTaintFlagged,omitempty" gorm:"column:net_taint_flagged"`
+	NetTaintDomains string `json:"-" gorm:"column:net_taint_domains"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 func (BrowserSession) TableName() string { return "browser_sessions" }

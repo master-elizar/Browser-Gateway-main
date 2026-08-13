@@ -64,11 +64,11 @@ func New(cfg *config.Config) (*Server, error) {
 
 	tokens := auth.NewTokenService(cfg.JWTSecret, cfg.AccessTokenTTL, cfg.RefreshTokenTTL)
 	authSvc := auth.NewService(st.DB, tokens)
-	sess := sessions.New(st.DB, orch)
+	tiSvc := ti.New(st.DB)
+	sess := sessions.New(st.DB, orch, tiSvc)
 	hub := netmon.NewHub()
 	sig := signaling.NewHub()
 	limiter := ratelimit.New(st.Redis)
-	tiSvc := ti.New(st.DB)
 	h := handlers.New(cfg, st, orch, tokens, authSvc, sess, hub, sig, limiter, tiSvc)
 	h.Bootstrap()
 

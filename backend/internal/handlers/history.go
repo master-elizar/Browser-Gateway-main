@@ -254,22 +254,30 @@ func (h *Handler) HistoryGet(c *fiber.Ctx) error {
 		})
 	}
 
+	var netTaintDomains []string
+	if sess.NetTaintDomains != "" {
+		netTaintDomains = strings.Split(sess.NetTaintDomains, ",")
+	}
 	return c.JSON(fiber.Map{
 		"session": fiber.Map{
-			"id":          sess.ID,
-			"name":        sess.Name,
-			"browser":     sess.Browser,
-			"status":      sess.Status,
-			"startUrl":    sess.StartURL,
-			"ownerId":     sess.OwnerID,
-			"startedAt":   sess.StartedAt,
-			"stoppedAt":   sess.StoppedAt,
-			"createdAt":   sess.CreatedAt,
-			"dnsMode":     sess.DnsMode,
-			"memoryMb":    sess.MemoryMB,
-			"cpus":        sess.CPUs,
-			"resolution":  sess.Resolution,
-			"errorReason": sess.ErrorReason,
+			"id":              sess.ID,
+			"name":            sess.Name,
+			"browser":         sess.Browser,
+			"status":          sess.Status,
+			"startUrl":        sess.StartURL,
+			"ownerId":         sess.OwnerID,
+			"startedAt":       sess.StartedAt,
+			"stoppedAt":       sess.StoppedAt,
+			"createdAt":       sess.CreatedAt,
+			"dnsMode":         sess.DnsMode,
+			"memoryMb":        sess.MemoryMB,
+			"cpus":            sess.CPUs,
+			"resolution":      sess.Resolution,
+			"errorReason":     sess.ErrorReason,
+			"netTaintChecked": sess.NetTaintChecked,
+			"netTaintTotal":   sess.NetTaintTotal,
+			"netTaintFlagged": sess.NetTaintFlagged,
+			"netTaintDomains": netTaintDomains,
 		},
 		"frames":  frameItems,
 		"network": netItems,
