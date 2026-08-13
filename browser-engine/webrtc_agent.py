@@ -69,7 +69,12 @@ async def run() -> None:
 
     async def ensure_pc() -> RTCPeerConnection:
         nonlocal pc
-        if pc is not None:
+        # A stale closed/failed pc must not be handed back -- a fresh offer after a prior
+        # connection died (viewer navigated away, network drop, ...) is a normal renegotiation
+        # from scratch, not an error condition; reusing the dead pc crashed the whole run()
+        # loop with "Cannot handle offer in signaling state closed" / "RTCPeerConnection is
+        # closed" instead of just handling the new offer.
+        if pc is not None and pc.connectionState not in ("closed", "failed"):
             return pc
         pc = RTCPeerConnection()
         pc.addTrack(X11Track())

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -257,6 +257,11 @@ export function SessionViewerPage() {
         )}`
       : null;
 
+  // Stable identity across re-renders (this page re-renders on every status poll tick and
+  // every netmon event) -- an inline arrow here would re-run WebRTCViewer's connection
+  // effect (which depends on this prop) constantly, tearing down and rebuilding the whole
+  // peer connection instead of ever letting it stay live.
+  const handleWebRTCError = useCallback((msg: string) => setError(msg), []);
 
   async function stop() {
     if (!accessToken || !id) return;
@@ -684,7 +689,7 @@ export function SessionViewerPage() {
               sessionId={id}
               accessToken={accessToken}
               className="absolute inset-0"
-              onError={(msg) => setError(msg)}
+              onError={handleWebRTCError}
             />
           ) : streamSrc ? (
             <iframe
