@@ -142,6 +142,12 @@ func (o *Orchestrator) CreateAndStart(ctx context.Context, p CreateParams) (*Cre
 		"DNS_DOH_URL=" + dnsDoh,
 		"BROWSER_ENGINE=" + browser,
 		"RESOLUTION=" + resolution,
+		// webrtc_agent.py's own RTCPeerConnection needs the same ICE servers the viewer gets --
+		// without them it only ever offers a host candidate on this container's internal
+		// browser-net address, which nothing outside the Docker host can ever route to.
+		"TURN_URLS=" + o.cfg.TURNURLs,
+		"TURN_USERNAME=" + o.cfg.TURNUsername,
+		"TURN_PASSWORD=" + o.cfg.TURNPassword,
 	}
 	if p.StartURL != "" {
 		env = append(env, "START_URL="+p.StartURL)

@@ -16,6 +16,9 @@ DISPLAY = os.environ.get("DISPLAY", ":99")
 WIDTH = int(os.environ.get("WEBRTC_WIDTH", "1280"))
 HEIGHT = int(os.environ.get("WEBRTC_HEIGHT", "800"))
 FPS = int(os.environ.get("WEBRTC_FPS", "10"))
+TURN_URLS = os.environ.get("TURN_URLS", "")
+TURN_USERNAME = os.environ.get("TURN_USERNAME", "")
+TURN_PASSWORD = os.environ.get("TURN_PASSWORD", "")
 
 
 def gateway_ws_url() -> str:
@@ -26,7 +29,13 @@ def gateway_ws_url() -> str:
 async def run() -> None:
     try:
         import numpy as np
-        from aiortc import RTCPeerConnection, RTCSessionDescription, VideoStreamTrack
+        from aiortc import (
+            RTCConfiguration,
+            RTCIceServer,
+            RTCPeerConnection,
+            RTCSessionDescription,
+            VideoStreamTrack,
+        )
         from aiortc.sdp import candidate_from_sdp
         from av import VideoFrame
         from mss import mss
@@ -65,6 +74,19 @@ async def run() -> None:
             frame.time_base = time_base
             return frame
 
+    def ice_configuration() -> RTCConfiguration:
+        # Without this, this side of the connection never gathers anything but a host
+        # candidate on this container's internal browser-net address -- unroutable from
+        # anywhere except the Docker host itself. Same TURN server/credentials the viewer's
+        # browser gets from GET /api/webrtc/ice, so both sides can actually meet on it.
+        urls = [u.strip() for u in TURN_URLS.split(",") if u.strip()]
+        if not urls:
+            print("[webrtc] no TURN_URLS configured for the agent side -- only host candidates", flush=True)
+            return RTCConfiguration(iceServers=[])
+        return RTCConfiguration(
+            iceServers=[RTCIceServer(urls=urls, username=TURN_USERNAME, credential=TURN_PASSWORD)]
+        )
+
     pc: RTCPeerConnection | None = None
 
     async def ensure_pc() -> RTCPeerConnection:
@@ -76,7 +98,7 @@ async def run() -> None:
         # closed" instead of just handling the new offer.
         if pc is not None and pc.connectionState not in ("closed", "failed"):
             return pc
-        pc = RTCPeerConnection()
+        pc = RTCPeerConnection(configuration=ice_configuration())
         pc.addTrack(X11Track())
 
         @pc.on("connectionstatechange")
