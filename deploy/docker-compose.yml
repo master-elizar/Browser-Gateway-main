@@ -132,6 +132,13 @@ services:
       - --lt-cred-mech
       - --user=bg:bgturn
       - --realm=browser-gateway.local
+      # LAN and VPN (e.g. Tailscale) clients need nothing here -- coturn listens on every
+      # interface of this host via network_mode: host, so its own address is already correct
+      # for those. Only uncomment this for public-internet access through a router doing NAT:
+      # tell coturn its public-facing IP so it reports a relay address a remote client can
+      # actually route to, instead of this host's private LAN IP. Requires UDP+TCP 3478 (and
+      # coturn's relay port range) forwarded on your router to this host.
+      # - --external-ip=YOUR.PUBLIC.IP/192.168.1.4
 
   browser-engine:
     build:

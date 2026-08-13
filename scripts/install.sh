@@ -130,9 +130,16 @@ detect_public_host() {
     return
   fi
   local ip
-  ip="$(hostname -I 2>/dev/null | awk '{print $1}')" || true
+  # Ask the kernel which source IP it would use to reach the internet -- this is the host's
+  # real, routable interface regardless of how many others exist. `hostname -I` lists every
+  # interface (including Docker's own bridge networks for this compose project) in whatever
+  # order the kernel happens to report them, so it can just as easily hand back a
+  # docker-internal address like 172.19.0.1 as the real LAN IP -- that address only resolves
+  # for processes running on the host itself, which is exactly the "works from the host,
+  # fails from every other device" symptom this ordering used to cause.
+  ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')" || true
   if [[ -z "$ip" ]]; then
-    ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}')" || true
+    ip="$(hostname -I 2>/dev/null | awk '{print $1}')" || true
   fi
   echo "${ip:-localhost}"
 }
