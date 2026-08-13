@@ -117,6 +117,7 @@ func (h *Handler) Register(app *fiber.App) {
 	authed.Delete("/browser/:id/network/events", h.BrowserClearNetworkEvents)
 	authed.Post("/browser/:id/network/enrich", h.BrowserNetworkEnrich)
 	authed.Post("/ti/lookup", h.TILookup)
+	authed.Post("/ti/check", h.TICheck)
 	authed.Get("/webrtc/ice", h.WebRTICE)
 	authed.Get("/viewer/features", h.ViewerFeatures)
 
