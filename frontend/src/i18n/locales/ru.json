@@ -231,6 +231,7 @@
     "statusError": "Ошибки (4xx/5xx)",
     "statusDnsOnly": "Только DNS",
     "methodAll": "Все методы",
+    "webrtcComingSoon": "WebRTC-стриминг сейчас дорабатывается и временно недоступен — активный способ просмотра — noVNC.",
     "fit": "Вписать",
     "stretch": "Растянуть",
     "dragResize": "Тяни для изменения высоты",

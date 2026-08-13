@@ -231,6 +231,7 @@
     "statusError": "Errors (4xx/5xx)",
     "statusDnsOnly": "DNS only",
     "methodAll": "All methods",
+    "webrtcComingSoon": "WebRTC streaming is being reworked and is temporarily unavailable — noVNC is the active viewer for now.",
     "fit": "Fit",
     "stretch": "Stretch",
     "dragResize": "Drag to resize",

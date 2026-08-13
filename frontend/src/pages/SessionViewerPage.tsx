@@ -21,6 +21,11 @@ type StreamMode = "webrtc" | "novnc";
 const REMOTE_W = 1280;
 const REMOTE_H = 800;
 
+// WebRTC (webrtc_agent.py, the signaling hub, WebRTCViewer.tsx) is paused mid-rework --
+// none of that code is removed, only this UI path to it. Flip back to true to resume it;
+// everything downstream already respects this flag.
+const WEBRTC_VIEWER_ENABLED = false;
+
 const defaultViewerFeatures: ViewerFeatures = {
   viewerWebrtcEnabled: true,
   viewerNovncEnabled: true,
@@ -78,7 +83,7 @@ export function SessionViewerPage() {
   const [dlBusy, setDlBusy] = useState(false);
   const [zipDefaultSet, setZipDefaultSet] = useState(false);
   const [fitMode, setFitMode] = useState<FitMode>("fit");
-  const [streamMode, setStreamMode] = useState<StreamMode>("webrtc");
+  const [streamMode, setStreamMode] = useState<StreamMode>("novnc");
   const [features, setFeatures] = useState<ViewerFeatures>(defaultViewerFeatures);
   const [viewerHeight, setViewerHeight] = useState(640);
   const [clearBusy, setClearBusy] = useState(false);
@@ -108,9 +113,14 @@ export function SessionViewerPage() {
   }, [accessToken]);
 
   useEffect(() => {
-    if (streamMode === "webrtc" && !features.viewerWebrtcEnabled && features.viewerNovncEnabled) {
+    if (streamMode === "webrtc" && (!WEBRTC_VIEWER_ENABLED || !features.viewerWebrtcEnabled) && features.viewerNovncEnabled) {
       setStreamMode("novnc");
-    } else if (streamMode === "novnc" && !features.viewerNovncEnabled && features.viewerWebrtcEnabled) {
+    } else if (
+      streamMode === "novnc" &&
+      !features.viewerNovncEnabled &&
+      WEBRTC_VIEWER_ENABLED &&
+      features.viewerWebrtcEnabled
+    ) {
       setStreamMode("webrtc");
     }
   }, [features.viewerWebrtcEnabled, features.viewerNovncEnabled, streamMode]);
@@ -237,14 +247,15 @@ export function SessionViewerPage() {
         : features.viewerFitEnabled || features.viewerStretchEnabled
           ? fitMode
           : "fit";
-  const streamAvailable = features.viewerWebrtcEnabled || features.viewerNovncEnabled;
+  const webrtcAvailable = WEBRTC_VIEWER_ENABLED && features.viewerWebrtcEnabled;
+  const streamAvailable = webrtcAvailable || features.viewerNovncEnabled;
   const effectiveStream: StreamMode | null = !streamAvailable
     ? null
-    : streamMode === "webrtc" && features.viewerWebrtcEnabled
+    : streamMode === "webrtc" && webrtcAvailable
       ? "webrtc"
       : features.viewerNovncEnabled
         ? "novnc"
-        : features.viewerWebrtcEnabled
+        : webrtcAvailable
           ? "webrtc"
           : null;
 
@@ -504,11 +515,14 @@ export function SessionViewerPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          {features.viewerWebrtcEnabled && (
-            <ToolBtn active={effectiveStream === "webrtc"} onClick={() => setStreamMode("webrtc")}>
-              WebRTC
-            </ToolBtn>
-          )}
+          <ToolBtn
+            active={effectiveStream === "webrtc"}
+            disabled={!WEBRTC_VIEWER_ENABLED}
+            title={WEBRTC_VIEWER_ENABLED ? undefined : t("viewer.webrtcComingSoon")}
+            onClick={() => WEBRTC_VIEWER_ENABLED && setStreamMode("webrtc")}
+          >
+            WebRTC
+          </ToolBtn>
           {features.viewerNovncEnabled && (
             <ToolBtn active={effectiveStream === "novnc"} onClick={() => setStreamMode("novnc")}>
               noVNC
@@ -767,21 +781,29 @@ export function SessionViewerPage() {
 function ToolBtn({
   children,
   active,
+  disabled,
+  title,
   onClick,
 }: {
   children: ReactNode;
   active?: boolean;
+  disabled?: boolean;
+  title?: string;
   onClick?: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      onClick={disabled ? undefined : onClick}
       className={[
         "rounded-[var(--radius-md)] border px-3 py-1.5 text-sm transition",
-        active
-          ? "border-[var(--color-signal)]/60 bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] shadow-[var(--shadow-sm)]"
-          : "border-[var(--color-line)] bg-[var(--color-panel)]/40 text-[var(--color-fog)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-snow)]",
+        disabled
+          ? "cursor-not-allowed border-[var(--color-line)] bg-[var(--color-panel)]/20 text-[var(--color-muted)] opacity-60"
+          : active
+            ? "border-[var(--color-signal)]/60 bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] shadow-[var(--shadow-sm)]"
+            : "border-[var(--color-line)] bg-[var(--color-panel)]/40 text-[var(--color-fog)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-snow)]",
       ].join(" ")}
     >
       {children}
