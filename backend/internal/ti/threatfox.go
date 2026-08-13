@@ -54,9 +54,11 @@ func (p threatFoxProvider) Lookup(ctx context.Context, kind Kind, indicator, api
 		if res.Malicious == 0 {
 			res.Malicious = 1
 		}
+		res.Detail = fmt.Sprintf("%d matching IOC(s)", res.Malicious)
 	case "no_result", "no_results":
 		res.Verdict = "clean"
 		res.Harmless = 1
+		res.Detail = "no matching IOCs"
 	default:
 		res.Verdict = "unknown"
 		res.Undetected = 1

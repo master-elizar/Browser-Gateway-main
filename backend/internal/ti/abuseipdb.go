@@ -50,6 +50,7 @@ func (p abuseIPDBProvider) Lookup(ctx context.Context, kind Kind, indicator, api
 		Kind:      string(kind),
 		Indicator: indicator,
 		Permalink: "https://www.abuseipdb.com/check/" + url.PathEscape(indicator),
+		Detail:    fmt.Sprintf("confidence score %d, %d report(s)", score, payload.Data.TotalReports),
 	}
 	switch {
 	case score >= 75 || payload.Data.TotalReports >= 10:

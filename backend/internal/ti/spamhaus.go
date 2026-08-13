@@ -50,6 +50,7 @@ func (spamhausProvider) Lookup(ctx context.Context, kind Kind, indicator, _ stri
 		if dnsErr, ok := err.(*net.DNSError); ok && (dnsErr.IsNotFound || dnsErr.Err == "no such host") {
 			res.Verdict = "clean"
 			res.Harmless = 1
+			res.Detail = "not listed"
 			return res, nil
 		}
 		// Other DNS failures → unknown (do not fail the whole multi-lookup)
@@ -61,11 +62,13 @@ func (spamhausProvider) Lookup(ctx context.Context, kind Kind, indicator, _ stri
 	if len(addrs) == 0 {
 		res.Verdict = "clean"
 		res.Harmless = 1
+		res.Detail = "not listed"
 		return res, nil
 	}
 	// Any spamhaus return code in 127.0.0.0/8 is a hit.
 	res.Verdict = "malicious"
 	res.Malicious = 1
+	res.Detail = "listed (" + strings.Join(addrs, ", ") + ")"
 	return res, nil
 }
 

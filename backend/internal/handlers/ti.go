@@ -33,6 +33,12 @@ type settingsView struct {
 	TiAbuseIPDBAPIKey             string `json:"tiAbuseipdbApiKey,omitempty"`
 	TiOTXAPIKeySet                bool   `json:"tiOtxApiKeySet"`
 	TiOTXAPIKey                   string `json:"tiOtxApiKey,omitempty"`
+	TiShodanAPIKeySet              bool   `json:"tiShodanApiKeySet"`
+	TiShodanAPIKey                 string `json:"tiShodanApiKey,omitempty"`
+	TiSafeBrowsingAPIKeySet        bool   `json:"tiSafebrowsingApiKeySet"`
+	TiSafeBrowsingAPIKey           string `json:"tiSafebrowsingApiKey,omitempty"`
+	TiMalwareBazaarAPIKeySet       bool   `json:"tiMalwarebazaarApiKeySet"`
+	TiMalwareBazaarAPIKey          string `json:"tiMalwarebazaarApiKey,omitempty"`
 	DownloadZipPasswordDefaultSet bool   `json:"downloadZipPasswordDefaultSet"`
 	DownloadZipPasswordDefault    string `json:"downloadZipPasswordDefault,omitempty"`
 }
@@ -43,6 +49,9 @@ func (h *Handler) settingsDTO(s domain.AppSettings) settingsView {
 	v.AppSettings.TiThreatFoxAPIKey = ""
 	v.AppSettings.TiAbuseIPDBAPIKey = ""
 	v.AppSettings.TiOTXAPIKey = ""
+	v.AppSettings.TiShodanAPIKey = ""
+	v.AppSettings.TiSafeBrowsingAPIKey = ""
+	v.AppSettings.TiMalwareBazaarAPIKey = ""
 	v.AppSettings.DownloadZipPasswordDefault = ""
 
 	if strings.TrimSpace(s.TiAPIKey) != "" {
@@ -60,6 +69,18 @@ func (h *Handler) settingsDTO(s domain.AppSettings) settingsView {
 	if strings.TrimSpace(s.TiOTXAPIKey) != "" {
 		v.TiOTXAPIKeySet = true
 		v.TiOTXAPIKey = ti.MaskAPIKey(s.TiOTXAPIKey)
+	}
+	if strings.TrimSpace(s.TiShodanAPIKey) != "" {
+		v.TiShodanAPIKeySet = true
+		v.TiShodanAPIKey = ti.MaskAPIKey(s.TiShodanAPIKey)
+	}
+	if strings.TrimSpace(s.TiSafeBrowsingAPIKey) != "" {
+		v.TiSafeBrowsingAPIKeySet = true
+		v.TiSafeBrowsingAPIKey = ti.MaskAPIKey(s.TiSafeBrowsingAPIKey)
+	}
+	if strings.TrimSpace(s.TiMalwareBazaarAPIKey) != "" {
+		v.TiMalwareBazaarAPIKeySet = true
+		v.TiMalwareBazaarAPIKey = ti.MaskAPIKey(s.TiMalwareBazaarAPIKey)
 	}
 	if strings.TrimSpace(s.DownloadZipPasswordDefault) != "" {
 		v.DownloadZipPasswordDefaultSet = true

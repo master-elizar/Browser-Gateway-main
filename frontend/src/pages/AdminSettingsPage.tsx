@@ -66,6 +66,17 @@ const empty: AppSettings = {
   tiOtxApiKey: "",
   tiOtxApiKeySet: false,
   tiSpamhausEnabled: false,
+  tiShodanEnabled: false,
+  tiShodanApiKey: "",
+  tiShodanApiKeySet: false,
+  tiSafebrowsingEnabled: false,
+  tiSafebrowsingApiKey: "",
+  tiSafebrowsingApiKeySet: false,
+  tiCrtshEnabled: false,
+  tiFeodoEnabled: false,
+  tiMalwarebazaarEnabled: false,
+  tiMalwarebazaarApiKey: "",
+  tiMalwarebazaarApiKeySet: false,
   viewerWebrtcEnabled: true,
   viewerNovncEnabled: true,
   viewerFitEnabled: true,
@@ -86,6 +97,9 @@ function clearTIKeys(s: AppSettings): AppSettings {
     tiThreatfoxApiKey: "",
     tiAbuseipdbApiKey: "",
     tiOtxApiKey: "",
+    tiShodanApiKey: "",
+    tiSafebrowsingApiKey: "",
+    tiMalwarebazaarApiKey: "",
     downloadZipPasswordDefault: "",
   };
 }
@@ -638,6 +652,109 @@ export function AdminSettingsPage() {
                         label={t("admin.tiSpamhaus")}
                         description={t("admin.tiSpamhausHint")}
                       />
+
+                      <Toggle
+                        checked={Boolean(settings.tiCrtshEnabled)}
+                        onChange={() =>
+                          setSettings((s) => ({ ...s, tiCrtshEnabled: !s.tiCrtshEnabled }))
+                        }
+                        label={t("admin.tiCrtsh")}
+                        description={t("admin.tiCrtshHint")}
+                      />
+
+                      <Toggle
+                        checked={Boolean(settings.tiFeodoEnabled)}
+                        onChange={() =>
+                          setSettings((s) => ({ ...s, tiFeodoEnabled: !s.tiFeodoEnabled }))
+                        }
+                        label={t("admin.tiFeodo")}
+                        description={t("admin.tiFeodoHint")}
+                      />
+
+                      <Toggle
+                        checked={Boolean(settings.tiShodanEnabled)}
+                        onChange={() =>
+                          setSettings((s) => ({ ...s, tiShodanEnabled: !s.tiShodanEnabled }))
+                        }
+                        label={t("admin.tiShodan")}
+                        description={t("admin.tiShodanHint")}
+                      />
+                      <Field
+                        label={t("admin.tiShodanKey")}
+                        hint={
+                          settings.tiShodanApiKeySet ? t("admin.tiApiKeySetHint") : t("admin.tiShodanKeyHint")
+                        }
+                      >
+                        <Input
+                          className="font-mono text-sm"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={settings.tiShodanApiKeySet ? "••••••••" : ""}
+                          value={settings.tiShodanApiKey || ""}
+                          onChange={(e) =>
+                            setSettings((s) => ({ ...s, tiShodanApiKey: e.target.value }))
+                          }
+                          spellCheck={false}
+                        />
+                      </Field>
+
+                      <Toggle
+                        checked={Boolean(settings.tiSafebrowsingEnabled)}
+                        onChange={() =>
+                          setSettings((s) => ({ ...s, tiSafebrowsingEnabled: !s.tiSafebrowsingEnabled }))
+                        }
+                        label={t("admin.tiSafebrowsing")}
+                        description={t("admin.tiSafebrowsingHint")}
+                      />
+                      <Field
+                        label={t("admin.tiSafebrowsingKey")}
+                        hint={
+                          settings.tiSafebrowsingApiKeySet
+                            ? t("admin.tiApiKeySetHint")
+                            : t("admin.tiSafebrowsingKeyHint")
+                        }
+                      >
+                        <Input
+                          className="font-mono text-sm"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={settings.tiSafebrowsingApiKeySet ? "••••••••" : ""}
+                          value={settings.tiSafebrowsingApiKey || ""}
+                          onChange={(e) =>
+                            setSettings((s) => ({ ...s, tiSafebrowsingApiKey: e.target.value }))
+                          }
+                          spellCheck={false}
+                        />
+                      </Field>
+
+                      <Toggle
+                        checked={Boolean(settings.tiMalwarebazaarEnabled)}
+                        onChange={() =>
+                          setSettings((s) => ({ ...s, tiMalwarebazaarEnabled: !s.tiMalwarebazaarEnabled }))
+                        }
+                        label={t("admin.tiMalwarebazaar")}
+                        description={t("admin.tiMalwarebazaarHint")}
+                      />
+                      <Field
+                        label={t("admin.tiMalwarebazaarKey")}
+                        hint={
+                          settings.tiMalwarebazaarApiKeySet
+                            ? t("admin.tiApiKeySetHint")
+                            : t("admin.tiMalwarebazaarKeyHint")
+                        }
+                      >
+                        <Input
+                          className="font-mono text-sm"
+                          type="password"
+                          autoComplete="off"
+                          placeholder={settings.tiMalwarebazaarApiKeySet ? "••••••••" : ""}
+                          value={settings.tiMalwarebazaarApiKey || ""}
+                          onChange={(e) =>
+                            setSettings((s) => ({ ...s, tiMalwarebazaarApiKey: e.target.value }))
+                          }
+                          spellCheck={false}
+                        />
+                      </Field>
                     </div>
                   </CardBody>
                 </Card>

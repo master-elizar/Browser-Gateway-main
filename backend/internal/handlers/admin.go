@@ -114,6 +114,11 @@ func (h *Handler) AdminPutSettings(c *fiber.Ctx) error {
 	s.TiAbuseIPDBEnabled = incoming.TiAbuseIPDBEnabled
 	s.TiOTXEnabled = incoming.TiOTXEnabled
 	s.TiSpamhausEnabled = incoming.TiSpamhausEnabled
+	s.TiShodanEnabled = incoming.TiShodanEnabled
+	s.TiSafeBrowsingEnabled = incoming.TiSafeBrowsingEnabled
+	s.TiCrtShEnabled = incoming.TiCrtShEnabled
+	s.TiFeodoEnabled = incoming.TiFeodoEnabled
+	s.TiMalwareBazaarEnabled = incoming.TiMalwareBazaarEnabled
 	if incoming.TiProvider != "" {
 		s.TiProvider = incoming.TiProvider
 	} else if s.TiProvider == "" {
@@ -129,6 +134,9 @@ func (h *Handler) AdminPutSettings(c *fiber.Ctx) error {
 	applyTIKey(&s.TiThreatFoxAPIKey, incoming.TiThreatFoxAPIKey)
 	applyTIKey(&s.TiAbuseIPDBAPIKey, incoming.TiAbuseIPDBAPIKey)
 	applyTIKey(&s.TiOTXAPIKey, incoming.TiOTXAPIKey)
+	applyTIKey(&s.TiShodanAPIKey, incoming.TiShodanAPIKey)
+	applyTIKey(&s.TiSafeBrowsingAPIKey, incoming.TiSafeBrowsingAPIKey)
+	applyTIKey(&s.TiMalwareBazaarAPIKey, incoming.TiMalwareBazaarAPIKey)
 
 	s.ViewerWebRTCEnabled = incoming.ViewerWebRTCEnabled
 	s.ViewerNoVNCEnabled = incoming.ViewerNoVNCEnabled

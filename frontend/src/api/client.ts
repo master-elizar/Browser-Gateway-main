@@ -45,6 +45,17 @@ export type AppSettings = {
   tiOtxApiKey?: string;
   tiOtxApiKeySet?: boolean;
   tiSpamhausEnabled?: boolean;
+  tiShodanEnabled?: boolean;
+  tiShodanApiKey?: string;
+  tiShodanApiKeySet?: boolean;
+  tiSafebrowsingEnabled?: boolean;
+  tiSafebrowsingApiKey?: string;
+  tiSafebrowsingApiKeySet?: boolean;
+  tiCrtshEnabled?: boolean;
+  tiFeodoEnabled?: boolean;
+  tiMalwarebazaarEnabled?: boolean;
+  tiMalwarebazaarApiKey?: string;
+  tiMalwarebazaarApiKeySet?: boolean;
   viewerWebrtcEnabled?: boolean;
   viewerNovncEnabled?: boolean;
   viewerFitEnabled?: boolean;

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,6 +28,12 @@ type Service struct {
 	vtMu     sync.Mutex
 	vtLast   time.Time
 	vtMinGap time.Duration
+
+	// Feodo Tracker publishes a static IP blocklist rather than a per-IP query API --
+	// fetched once and refreshed on a TTL instead of a live call on every lookup.
+	feodoMu      sync.Mutex
+	feodoSet     map[string]string // ip -> malware family
+	feodoFetched time.Time
 }
 
 func New(db *gorm.DB) *Service {
@@ -46,13 +53,15 @@ func NormalizeKind(kind, value string) (Kind, string, error) {
 	}
 	k := Kind(strings.ToLower(strings.TrimSpace(kind)))
 	switch k {
-	case KindDomain, KindIP, KindURL:
+	case KindDomain, KindIP, KindURL, KindHash:
 		// ok
 	case "":
 		if strings.Contains(v, "://") || strings.HasPrefix(strings.ToLower(v), "www.") {
 			k = KindURL
 		} else if ip := net.ParseIP(strings.Trim(v, "[]")); ip != nil {
 			k = KindIP
+		} else if isHexHash(v) {
+			k = KindHash
 		} else {
 			k = KindDomain
 		}
@@ -71,7 +80,26 @@ func NormalizeKind(kind, value string) (Kind, string, error) {
 	if k == KindIP {
 		v = strings.Trim(v, "[]")
 	}
+	if k == KindHash {
+		v = strings.ToLower(v)
+	}
 	return k, v, nil
+}
+
+// isHexHash reports whether v is a bare MD5 (32), SHA1 (40), or SHA256 (64) hex digest --
+// the three lengths MalwareBazaar accepts.
+func isHexHash(v string) bool {
+	switch len(v) {
+	case 32, 40, 64:
+	default:
+		return false
+	}
+	for _, r := range v {
+		if !(r >= '0' && r <= '9') && !(r >= 'a' && r <= 'f') && !(r >= 'A' && r <= 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 type enabledProvider struct {
@@ -80,7 +108,7 @@ type enabledProvider struct {
 }
 
 func (s *Service) enabledProviders(settings domain.AppSettings) []enabledProvider {
-	out := make([]enabledProvider, 0, 6)
+	out := make([]enabledProvider, 0, 12)
 	if settings.TiVirusTotalEnabled && strings.TrimSpace(settings.TiAPIKey) != "" {
 		out = append(out, enabledProvider{p: virusTotalProvider{s: s}, apiKey: strings.TrimSpace(settings.TiAPIKey)})
 	}
@@ -98,6 +126,21 @@ func (s *Service) enabledProviders(settings domain.AppSettings) []enabledProvide
 	}
 	if settings.TiSpamhausEnabled {
 		out = append(out, enabledProvider{p: spamhausProvider{}})
+	}
+	if settings.TiShodanEnabled && strings.TrimSpace(settings.TiShodanAPIKey) != "" {
+		out = append(out, enabledProvider{p: shodanProvider{s: s}, apiKey: strings.TrimSpace(settings.TiShodanAPIKey)})
+	}
+	if settings.TiSafeBrowsingEnabled && strings.TrimSpace(settings.TiSafeBrowsingAPIKey) != "" {
+		out = append(out, enabledProvider{p: safeBrowsingProvider{s: s}, apiKey: strings.TrimSpace(settings.TiSafeBrowsingAPIKey)})
+	}
+	if settings.TiCrtShEnabled {
+		out = append(out, enabledProvider{p: crtShProvider{s: s}})
+	}
+	if settings.TiFeodoEnabled {
+		out = append(out, enabledProvider{p: feodoProvider{s: s}})
+	}
+	if settings.TiMalwareBazaarEnabled {
+		out = append(out, enabledProvider{p: malwareBazaarProvider{s: s}, apiKey: strings.TrimSpace(settings.TiMalwareBazaarAPIKey)})
 	}
 	return out
 }
@@ -223,6 +266,12 @@ func aggregate(kind, indicator string, parts []Result) *Result {
 		if p.Error != "" {
 			continue
 		}
+		// Informational providers (Shodan, crt.sh) don't assert a malicious/clean verdict --
+		// they're still attached to agg.Providers below for an advanced-mode display, just
+		// excluded from the counts a verdict is computed from.
+		if p.Informational {
+			continue
+		}
 		switch p.Verdict {
 		case "malicious":
 			agg.Malicious++
@@ -288,16 +337,18 @@ func (s *Service) fromCache(provider, kind, indicator string) (*Result, bool) {
 		return nil, false
 	}
 	return &Result{
-		Provider:   row.Provider,
-		Kind:       row.Kind,
-		Indicator:  row.Indicator,
-		Verdict:    row.Verdict,
-		Malicious:  row.Malicious,
-		Suspicious: row.Suspicious,
-		Harmless:   row.Harmless,
-		Undetected: row.Undetected,
-		Permalink:  row.Permalink,
-		CheckedAt:  row.CheckedAt,
+		Provider:      row.Provider,
+		Kind:          row.Kind,
+		Indicator:     row.Indicator,
+		Verdict:       row.Verdict,
+		Malicious:     row.Malicious,
+		Suspicious:    row.Suspicious,
+		Harmless:      row.Harmless,
+		Undetected:    row.Undetected,
+		Detail:        row.Detail,
+		Informational: row.Informational,
+		Permalink:     row.Permalink,
+		CheckedAt:     row.CheckedAt,
 	}, true
 }
 
@@ -307,26 +358,69 @@ func (s *Service) saveCache(r *Result) {
 	}
 	now := time.Now().UTC()
 	row := domain.TICacheEntry{
-		ID:         uuid.NewString(),
-		Provider:   r.Provider,
-		Kind:       r.Kind,
-		Indicator:  r.Indicator,
-		Verdict:    r.Verdict,
-		Malicious:  r.Malicious,
-		Suspicious: r.Suspicious,
-		Harmless:   r.Harmless,
-		Undetected: r.Undetected,
-		Permalink:  r.Permalink,
-		CheckedAt:  now,
-		ExpiresAt:  now.Add(24 * time.Hour),
+		ID:            uuid.NewString(),
+		Provider:      r.Provider,
+		Kind:          r.Kind,
+		Indicator:     r.Indicator,
+		Verdict:       r.Verdict,
+		Malicious:     r.Malicious,
+		Suspicious:    r.Suspicious,
+		Harmless:      r.Harmless,
+		Undetected:    r.Undetected,
+		Detail:        r.Detail,
+		Informational: r.Informational,
+		Permalink:     r.Permalink,
+		CheckedAt:     now,
+		ExpiresAt:     now.Add(24 * time.Hour),
 	}
 	_ = s.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "provider"}, {Name: "kind"}, {Name: "indicator"}},
 		DoUpdates: clause.AssignmentColumns([]string{
-			"verdict", "malicious", "suspicious", "harmless", "undetected", "permalink", "checked_at", "expires_at",
+			"verdict", "malicious", "suspicious", "harmless", "undetected", "detail", "informational", "permalink", "checked_at", "expires_at",
 		}),
 	}).Create(&row).Error
 	r.CheckedAt = now
+}
+
+// feodoBlocklist returns the current Feodo Tracker C2 IP blocklist, refetching it if the
+// cached copy is more than an hour old. A stale-but-present cache is preferred over a hard
+// failure if the refetch itself errors (feodotracker.abuse.ch being briefly unreachable
+// shouldn't take this provider down for every lookup until the next successful refresh).
+func (s *Service) feodoBlocklist(ctx context.Context) (map[string]string, error) {
+	s.feodoMu.Lock()
+	defer s.feodoMu.Unlock()
+	if s.feodoSet != nil && time.Since(s.feodoFetched) < time.Hour {
+		return s.feodoSet, nil
+	}
+	code, body, err := s.doJSON(ctx, http.MethodGet, "https://feodotracker.abuse.ch/downloads/ipblocklist.json", nil, nil)
+	if err != nil || code >= 300 {
+		if s.feodoSet != nil {
+			return s.feodoSet, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("feodotracker http %d", code)
+	}
+	var entries []struct {
+		IPAddress string `json:"ip_address"`
+		Malware   string `json:"malware"`
+	}
+	if err := json.Unmarshal(body, &entries); err != nil {
+		if s.feodoSet != nil {
+			return s.feodoSet, nil
+		}
+		return nil, err
+	}
+	set := make(map[string]string, len(entries))
+	for _, e := range entries {
+		if e.IPAddress != "" {
+			set[e.IPAddress] = e.Malware
+		}
+	}
+	s.feodoSet = set
+	s.feodoFetched = time.Now()
+	return set, nil
 }
 
 func (s *Service) doJSON(ctx context.Context, method, rawURL string, body io.Reader, headers map[string]string) (int, []byte, error) {

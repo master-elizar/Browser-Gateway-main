@@ -104,6 +104,15 @@ type AppSettings struct {
 	TiOTXEnabled       bool   `json:"tiOtxEnabled" gorm:"column:ti_otx_enabled"`
 	TiOTXAPIKey        string `json:"tiOtxApiKey,omitempty" gorm:"column:ti_otx_api_key"`
 	TiSpamhausEnabled  bool   `json:"tiSpamhausEnabled" gorm:"column:ti_spamhaus_enabled"`
+	// Domain-check tab additions (Stage 18)
+	TiShodanEnabled        bool   `json:"tiShodanEnabled" gorm:"column:ti_shodan_enabled"`
+	TiShodanAPIKey         string `json:"tiShodanApiKey,omitempty" gorm:"column:ti_shodan_api_key"`
+	TiSafeBrowsingEnabled  bool   `json:"tiSafebrowsingEnabled" gorm:"column:ti_safebrowsing_enabled"`
+	TiSafeBrowsingAPIKey   string `json:"tiSafebrowsingApiKey,omitempty" gorm:"column:ti_safebrowsing_api_key"`
+	TiCrtShEnabled         bool   `json:"tiCrtshEnabled" gorm:"column:ti_crtsh_enabled"`
+	TiFeodoEnabled         bool   `json:"tiFeodoEnabled" gorm:"column:ti_feodo_enabled"`
+	TiMalwareBazaarEnabled bool   `json:"tiMalwarebazaarEnabled" gorm:"column:ti_malwarebazaar_enabled"`
+	TiMalwareBazaarAPIKey  string `json:"tiMalwarebazaarApiKey,omitempty" gorm:"column:ti_malwarebazaar_api_key"`
 
 	// Session viewer UI toggles (0.16.4). ViewerUIVersion=0 means "not migrated yet".
 	ViewerUIVersion          int  `json:"-" gorm:"column:viewer_ui_version;default:0"`
@@ -147,10 +156,12 @@ type TICacheEntry struct {
 	Malicious  int       `json:"malicious"`
 	Suspicious int       `json:"suspicious"`
 	Harmless   int       `json:"harmless"`
-	Undetected int       `json:"undetected"`
-	Permalink  string    `json:"permalink,omitempty"`
-	CheckedAt  time.Time `json:"checkedAt"`
-	ExpiresAt  time.Time `json:"expiresAt" gorm:"index"`
+	Undetected    int       `json:"undetected"`
+	Detail        string    `json:"detail,omitempty"`
+	Informational bool      `json:"informational,omitempty"`
+	Permalink     string    `json:"permalink,omitempty"`
+	CheckedAt     time.Time `json:"checkedAt"`
+	ExpiresAt     time.Time `json:"expiresAt" gorm:"index"`
 }
 
 func (TICacheEntry) TableName() string { return "ti_cache" }

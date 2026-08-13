@@ -46,6 +46,7 @@ func (p otxProvider) Lookup(ctx context.Context, kind Kind, indicator, apiKey st
 			Kind:      string(kind),
 			Indicator: indicator,
 			Verdict:   "unknown",
+			Detail:    "not indexed by OTX",
 			Permalink: "https://otx.alienvault.com/",
 		}, nil
 	}
@@ -73,12 +74,15 @@ func (p otxProvider) Lookup(ctx context.Context, kind Kind, indicator, apiKey st
 	case n >= 3:
 		res.Verdict = "malicious"
 		res.Malicious = n
+		res.Detail = fmt.Sprintf("found in %d pulses", n)
 	case n >= 1:
 		res.Verdict = "suspicious"
 		res.Suspicious = n
+		res.Detail = fmt.Sprintf("found in %d pulse(s)", n)
 	default:
 		res.Verdict = "clean"
 		res.Harmless = 1
+		res.Detail = "not found in any pulses"
 	}
 	return res, nil
 }

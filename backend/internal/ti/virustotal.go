@@ -50,6 +50,7 @@ func (p virusTotalProvider) Lookup(ctx context.Context, kind Kind, indicator, ap
 			Kind:      string(kind),
 			Indicator: indicator,
 			Verdict:   "unknown",
+			Detail:    "not seen by VirusTotal",
 			Permalink: permalink,
 		}, nil
 	}
@@ -82,6 +83,7 @@ func (p virusTotalProvider) Lookup(ctx context.Context, kind Kind, indicator, ap
 	case stats.Malicious+stats.Suspicious+stats.Harmless+stats.Undetected == 0:
 		verdict = "unknown"
 	}
+	total := stats.Malicious + stats.Suspicious + stats.Harmless + stats.Undetected
 	return &Result{
 		Provider:   "virustotal",
 		Kind:       string(kind),
@@ -91,6 +93,7 @@ func (p virusTotalProvider) Lookup(ctx context.Context, kind Kind, indicator, ap
 		Suspicious: stats.Suspicious,
 		Harmless:   stats.Harmless,
 		Undetected: stats.Undetected,
+		Detail:     fmt.Sprintf("%d/%d engines flagged", stats.Malicious+stats.Suspicious, total),
 		Permalink:  permalink,
 	}, nil
 }

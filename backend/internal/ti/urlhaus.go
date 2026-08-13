@@ -73,9 +73,11 @@ func (p urlhausProvider) Lookup(ctx context.Context, kind Kind, indicator, _ str
 		if n := len(payload.URLs); n > 0 {
 			res.Malicious = n
 		}
+		res.Detail = fmt.Sprintf("%d malicious URL(s) hosted here", res.Malicious)
 	case "no_results", "no_result":
 		res.Verdict = "clean"
 		res.Harmless = 1
+		res.Detail = "no known malicious URLs"
 	default:
 		res.Verdict = "unknown"
 		res.Undetected = 1
