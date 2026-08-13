@@ -69,6 +69,12 @@ export type AppSettings = {
   downloadZipPasswordDefaultSet?: boolean;
 };
 
+export type TIKeyView = {
+  provider: string;
+  keySet: boolean;
+  keyMasked?: string;
+};
+
 export type ViewerFeatures = {
   instanceName?: string;
   viewerWebrtcEnabled: boolean;
@@ -428,6 +434,31 @@ export const api = {
   async me(token: string) {
     return parse<User>(
       await fetch("/api/auth/me", { headers: authHeaders(token) }),
+    );
+  },
+
+  async listTIKeys(token: string) {
+    return parse<{ items: TIKeyView[] }>(
+      await fetch("/api/account/ti-keys", { headers: authHeaders(token) }),
+    );
+  },
+
+  async setTIKey(token: string, provider: string, apiKey: string) {
+    return parse<{ ok: boolean; provider: string; keySet: boolean; keyMasked?: string }>(
+      await fetch(`/api/account/ti-keys/${provider}`, {
+        method: "PUT",
+        headers: authHeaders(token),
+        body: JSON.stringify({ apiKey }),
+      }),
+    );
+  },
+
+  async deleteTIKey(token: string, provider: string) {
+    return parse<{ ok: boolean; provider: string; keySet: boolean }>(
+      await fetch(`/api/account/ti-keys/${provider}`, {
+        method: "DELETE",
+        headers: authHeaders(token),
+      }),
     );
   },
 

@@ -166,6 +166,20 @@ type TICacheEntry struct {
 
 func (TICacheEntry) TableName() string { return "ti_cache" }
 
+// UserTIKey is a per-user personal API key for a threat-intel provider (e.g. "virustotal",
+// "shodan") that overrides the project-wide default key from AppSettings for that user's
+// own lookups. No row for a given (UserID, Provider) means "use the project default".
+type UserTIKey struct {
+	ID        string    `json:"id" gorm:"type:uuid;primaryKey"`
+	UserID    string    `json:"userId" gorm:"type:uuid;not null;uniqueIndex:idx_user_ti_key"`
+	Provider  string    `json:"provider" gorm:"not null;uniqueIndex:idx_user_ti_key"`
+	APIKey    string    `json:"-" gorm:"column:api_key;not null"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (UserTIKey) TableName() string { return "user_ti_keys" }
+
 type AuditEvent struct {
 	ID        string    `json:"id" gorm:"type:uuid;primaryKey"`
 	UserID    *string   `json:"userId,omitempty" gorm:"type:uuid;index"`

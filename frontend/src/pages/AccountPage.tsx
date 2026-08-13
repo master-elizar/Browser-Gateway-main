@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { ApiKeysSection } from "../components/ApiKeysSection";
 import { ChangePasswordForm } from "../components/ChangePasswordForm";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { ThemePicker } from "../components/ThemePicker";
@@ -60,6 +61,13 @@ export function AccountPage() {
         <CardHeader title={t("account.passwordSection")} description={t("account.passwordHint")} />
         <CardBody>
           <ChangePasswordForm />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title={t("account.apiKeysTitle")} description={t("account.apiKeysSubtitle")} />
+        <CardBody>
+          <ApiKeysSection />
         </CardBody>
       </Card>
     </div>

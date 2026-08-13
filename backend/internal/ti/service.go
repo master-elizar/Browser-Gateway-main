@@ -107,31 +107,54 @@ type enabledProvider struct {
 	apiKey string
 }
 
-func (s *Service) enabledProviders(settings domain.AppSettings) []enabledProvider {
+// enabledProviders builds the active provider list for a lookup. userKeys (provider ID ->
+// personal API key, from UserTIKey) takes precedence over the project-wide default key in
+// settings when present for a given provider -- but a provider must still be enabled by the
+// admin in settings for it to run at all; a personal key alone can't turn on a provider the
+// admin has disabled.
+func (s *Service) enabledProviders(settings domain.AppSettings, userKeys map[string]string) []enabledProvider {
 	out := make([]enabledProvider, 0, 12)
-	if settings.TiVirusTotalEnabled && strings.TrimSpace(settings.TiAPIKey) != "" {
-		out = append(out, enabledProvider{p: virusTotalProvider{s: s}, apiKey: strings.TrimSpace(settings.TiAPIKey)})
+	resolve := func(providerID, projectKey string) string {
+		if userKeys != nil {
+			if k := strings.TrimSpace(userKeys[providerID]); k != "" {
+				return k
+			}
+		}
+		return strings.TrimSpace(projectKey)
+	}
+	if settings.TiVirusTotalEnabled {
+		if key := resolve("virustotal", settings.TiAPIKey); key != "" {
+			out = append(out, enabledProvider{p: virusTotalProvider{s: s}, apiKey: key})
+		}
 	}
 	if settings.TiURLHausEnabled {
 		out = append(out, enabledProvider{p: urlhausProvider{s: s}})
 	}
 	if settings.TiThreatFoxEnabled {
-		out = append(out, enabledProvider{p: threatFoxProvider{s: s}, apiKey: strings.TrimSpace(settings.TiThreatFoxAPIKey)})
+		out = append(out, enabledProvider{p: threatFoxProvider{s: s}, apiKey: resolve("threatfox", settings.TiThreatFoxAPIKey)})
 	}
-	if settings.TiAbuseIPDBEnabled && strings.TrimSpace(settings.TiAbuseIPDBAPIKey) != "" {
-		out = append(out, enabledProvider{p: abuseIPDBProvider{s: s}, apiKey: strings.TrimSpace(settings.TiAbuseIPDBAPIKey)})
+	if settings.TiAbuseIPDBEnabled {
+		if key := resolve("abuseipdb", settings.TiAbuseIPDBAPIKey); key != "" {
+			out = append(out, enabledProvider{p: abuseIPDBProvider{s: s}, apiKey: key})
+		}
 	}
-	if settings.TiOTXEnabled && strings.TrimSpace(settings.TiOTXAPIKey) != "" {
-		out = append(out, enabledProvider{p: otxProvider{s: s}, apiKey: strings.TrimSpace(settings.TiOTXAPIKey)})
+	if settings.TiOTXEnabled {
+		if key := resolve("otx", settings.TiOTXAPIKey); key != "" {
+			out = append(out, enabledProvider{p: otxProvider{s: s}, apiKey: key})
+		}
 	}
 	if settings.TiSpamhausEnabled {
 		out = append(out, enabledProvider{p: spamhausProvider{}})
 	}
-	if settings.TiShodanEnabled && strings.TrimSpace(settings.TiShodanAPIKey) != "" {
-		out = append(out, enabledProvider{p: shodanProvider{s: s}, apiKey: strings.TrimSpace(settings.TiShodanAPIKey)})
+	if settings.TiShodanEnabled {
+		if key := resolve("shodan", settings.TiShodanAPIKey); key != "" {
+			out = append(out, enabledProvider{p: shodanProvider{s: s}, apiKey: key})
+		}
 	}
-	if settings.TiSafeBrowsingEnabled && strings.TrimSpace(settings.TiSafeBrowsingAPIKey) != "" {
-		out = append(out, enabledProvider{p: safeBrowsingProvider{s: s}, apiKey: strings.TrimSpace(settings.TiSafeBrowsingAPIKey)})
+	if settings.TiSafeBrowsingEnabled {
+		if key := resolve("safebrowsing", settings.TiSafeBrowsingAPIKey); key != "" {
+			out = append(out, enabledProvider{p: safeBrowsingProvider{s: s}, apiKey: key})
+		}
 	}
 	if settings.TiCrtShEnabled {
 		out = append(out, enabledProvider{p: crtShProvider{s: s}})
@@ -140,12 +163,34 @@ func (s *Service) enabledProviders(settings domain.AppSettings) []enabledProvide
 		out = append(out, enabledProvider{p: feodoProvider{s: s}})
 	}
 	if settings.TiMalwareBazaarEnabled {
-		out = append(out, enabledProvider{p: malwareBazaarProvider{s: s}, apiKey: strings.TrimSpace(settings.TiMalwareBazaarAPIKey)})
+		out = append(out, enabledProvider{p: malwareBazaarProvider{s: s}, apiKey: resolve("malwarebazaar", settings.TiMalwareBazaarAPIKey)})
 	}
 	return out
 }
 
-func (s *Service) Lookup(ctx context.Context, settings domain.AppSettings, kind, value string) (*Result, error) {
+// userTIKeys loads this user's personal API key overrides as a provider-ID -> key map.
+// Returns nil (not an empty map) for an anonymous/system caller or on any DB error, which
+// resolve() above treats identically to "no personal keys" -- always falls through to the
+// project default.
+func (s *Service) userTIKeys(userID string) map[string]string {
+	if strings.TrimSpace(userID) == "" {
+		return nil
+	}
+	var rows []domain.UserTIKey
+	if err := s.db.Where("user_id = ?", userID).Find(&rows).Error; err != nil {
+		return nil
+	}
+	out := make(map[string]string, len(rows))
+	for _, r := range rows {
+		out[r.Provider] = r.APIKey
+	}
+	return out
+}
+
+// Lookup runs an indicator through every enabled provider in parallel. userID is optional
+// (pass "" for system/anonymous calls) -- when set, it's used to resolve any personal API
+// key overrides (see enabledProviders/userTIKeys) for that specific user's lookup.
+func (s *Service) Lookup(ctx context.Context, settings domain.AppSettings, userID, kind, value string) (*Result, error) {
 	if !settings.TiEnabled {
 		return nil, ErrDisabled
 	}
@@ -154,7 +199,7 @@ func (s *Service) Lookup(ctx context.Context, settings domain.AppSettings, kind,
 		return nil, err
 	}
 
-	providers := s.enabledProviders(settings)
+	providers := s.enabledProviders(settings, s.userTIKeys(userID))
 	// Stage 13 compat: only VT key configured, flags not backfilled yet.
 	if len(providers) == 0 && strings.TrimSpace(settings.TiAPIKey) != "" {
 		providers = []enabledProvider{{p: virusTotalProvider{s: s}, apiKey: strings.TrimSpace(settings.TiAPIKey)}}
@@ -220,7 +265,7 @@ func (s *Service) Lookup(ctx context.Context, settings domain.AppSettings, kind,
 	return aggregate(string(k), indicator, parts), nil
 }
 
-func (s *Service) LookupMany(ctx context.Context, settings domain.AppSettings, values []string) []Result {
+func (s *Service) LookupMany(ctx context.Context, settings domain.AppSettings, userID string, values []string) []Result {
 	out := make([]Result, 0, len(values))
 	seen := map[string]struct{}{}
 	for _, raw := range values {
@@ -233,7 +278,7 @@ func (s *Service) LookupMany(ctx context.Context, settings domain.AppSettings, v
 			continue
 		}
 		seen[key] = struct{}{}
-		r, err := s.Lookup(ctx, settings, string(k), ind)
+		r, err := s.Lookup(ctx, settings, userID, string(k), ind)
 		if err != nil {
 			out = append(out, Result{
 				Provider:  "multi",

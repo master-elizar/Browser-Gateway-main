@@ -487,7 +487,25 @@
     "changePassword": "Update password",
     "passwordChanged": "Password updated.",
     "passwordMismatch": "New passwords do not match.",
-    "passwordError": "Could not change password"
+    "passwordError": "Could not change password",
+    "apiKeysTitle": "Threat intelligence API keys",
+    "apiKeysSubtitle": "Personal keys for the domain-check tab, used instead of the project's default key.",
+    "apiKeysHint": "If you set a personal key here, your domain checks use it instead of the project's shared key (your own rate limits). Leave blank to keep using the project default.",
+    "apiKeySaved": "API key saved.",
+    "apiKeyCleared": "API key cleared, using the project default again.",
+    "apiKeyError": "Could not save API key",
+    "apiKeySetHint": "Personal key set.",
+    "apiKeyUnsetHint": "Using the project default key, if configured.",
+    "apiKeyClear": "Clear",
+    "tiProvider": {
+      "virustotal": "VirusTotal",
+      "threatfox": "ThreatFox",
+      "abuseipdb": "AbuseIPDB",
+      "otx": "AlienVault OTX",
+      "shodan": "Shodan",
+      "safebrowsing": "Google Safe Browsing",
+      "malwarebazaar": "MalwareBazaar"
+    }
   },
   "theme": {
     "title": "Appearance",

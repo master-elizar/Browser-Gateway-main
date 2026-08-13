@@ -58,6 +58,7 @@ func (s *Store) AutoMigrate() error {
 		&domain.NetworkEvent{},
 		&domain.TICacheEntry{},
 		&domain.SessionTimelineEvent{},
+		&domain.UserTIKey{},
 	)
 }
 

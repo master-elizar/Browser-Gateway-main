@@ -104,13 +104,17 @@ func (h *Handler) TILookup(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
 	}
 	st := h.loadSettings()
+	actor := auth.CurrentUser(c)
+	actorID := ""
+	if actor != nil {
+		actorID = actor.ID
+	}
 	ctx, cancel := context.WithTimeout(c.Context(), 45*time.Second)
 	defer cancel()
-	res, err := h.ti.Lookup(ctx, st, req.Kind, req.Value)
+	res, err := h.ti.Lookup(ctx, st, actorID, req.Kind, req.Value)
 	if err != nil {
 		return mapTIErr(err)
 	}
-	actor := auth.CurrentUser(c)
 	if actor != nil {
 		_ = h.auth.WriteAudit(actor.ID, "ti.lookup", res.Kind+":"+res.Indicator+" → "+res.Verdict)
 		if sid := strings.TrimSpace(req.SessionID); sid != "" {
@@ -163,7 +167,7 @@ func (h *Handler) BrowserNetworkEnrich(c *fiber.Ctx) error {
 	st := h.loadSettings()
 	ctx, cancel := context.WithTimeout(c.Context(), 120*time.Second)
 	defer cancel()
-	results := h.ti.LookupMany(ctx, st, values)
+	results := h.ti.LookupMany(ctx, st, user.ID, values)
 	for _, r := range results {
 		h.persistTIResult(id, r)
 	}

@@ -487,7 +487,25 @@
     "changePassword": "Сменить пароль",
     "passwordChanged": "Пароль обновлён.",
     "passwordMismatch": "Новые пароли не совпадают.",
-    "passwordError": "Не удалось сменить пароль"
+    "passwordError": "Не удалось сменить пароль",
+    "apiKeysTitle": "API-ключи threat intelligence",
+    "apiKeysSubtitle": "Личные ключи для вкладки проверки домена — используются вместо ключа проекта по умолчанию.",
+    "apiKeysHint": "Если задать здесь личный ключ, проверки домена будут использовать его вместо общего ключа проекта (свои лимиты). Оставьте пустым, чтобы использовать ключ проекта.",
+    "apiKeySaved": "API-ключ сохранён.",
+    "apiKeyCleared": "API-ключ удалён, снова используется ключ проекта.",
+    "apiKeyError": "Не удалось сохранить API-ключ",
+    "apiKeySetHint": "Личный ключ задан.",
+    "apiKeyUnsetHint": "Используется ключ проекта, если он настроен.",
+    "apiKeyClear": "Удалить",
+    "tiProvider": {
+      "virustotal": "VirusTotal",
+      "threatfox": "ThreatFox",
+      "abuseipdb": "AbuseIPDB",
+      "otx": "AlienVault OTX",
+      "shodan": "Shodan",
+      "safebrowsing": "Google Safe Browsing",
+      "malwarebazaar": "MalwareBazaar"
+    }
   },
   "theme": {
     "title": "Оформление",

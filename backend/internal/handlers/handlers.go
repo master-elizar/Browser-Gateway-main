@@ -98,6 +98,9 @@ func (h *Handler) Register(app *fiber.App) {
 	authed := api.Group("", auth.Middleware(h.tokens, h.auth))
 	authed.Get("/auth/me", h.AuthMe)
 	authed.Post("/auth/password", h.AuthChangePassword)
+	authed.Get("/account/ti-keys", h.AccountListTIKeys)
+	authed.Put("/account/ti-keys/:provider", h.AccountSetTIKey)
+	authed.Delete("/account/ti-keys/:provider", h.AccountDeleteTIKey)
 
 	authed.Get("/browser/launch-options", h.BrowserLaunchOptions)
 	authed.Post("/browser/create", h.BrowserCreate)

@@ -91,8 +91,10 @@ func (h *Handler) autoEnrichEvent(sessionID string, ev map[string]any, settings 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
-	// Only first indicator to stay within free-tier rate limits.
-	results := h.ti.LookupMany(ctx, settings, candidates[:1])
+	// Only first indicator to stay within free-tier rate limits. Background auto-enrich has
+	// no specific user to attribute a personal API key to, so it always uses the project
+	// default key (userID "").
+	results := h.ti.LookupMany(ctx, settings, "", candidates[:1])
 	for _, r := range results {
 		h.persistTIResult(sessionID, r)
 	}
