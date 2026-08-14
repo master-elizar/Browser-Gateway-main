@@ -117,9 +117,15 @@ func (h *Handler) TICheck(c *fiber.Ctx) error {
 		Tier:       domainCheckTier(res.Malicious, res.Suspicious, total),
 	}
 
-	if k == ti.KindDomain {
+	if k == ti.KindDomain || k == ti.KindIP {
 		whoisCtx, whoisCancel := context.WithTimeout(c.Context(), 10*time.Second)
-		whois, werr := h.ti.LookupRDAP(whoisCtx, indicator)
+		var whois *ti.WhoisInfo
+		var werr error
+		if k == ti.KindDomain {
+			whois, werr = h.ti.LookupRDAP(whoisCtx, indicator)
+		} else {
+			whois, werr = h.ti.LookupRDAPIP(whoisCtx, indicator)
+		}
 		whoisCancel()
 		if werr != nil {
 			resp.WhoisError = werr.Error()

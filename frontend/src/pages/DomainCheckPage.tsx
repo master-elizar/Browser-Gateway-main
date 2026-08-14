@@ -48,6 +48,42 @@ function formatDate(iso?: string): string {
   return d.toLocaleDateString();
 }
 
+// whoisRows builds the advanced-mode WHOIS/RDAP field list, skipping anything the response
+// didn't have -- domain and IP lookups return different (slightly overlapping) field sets, so
+// this picks the right shape from result.kind rather than showing "—" placeholders for every
+// field that doesn't apply to the indicator being checked.
+function whoisRows(
+  whois: NonNullable<import("../api/client").DomainCheckResult["whois"]>,
+  kind: string,
+  t: (key: string) => string,
+): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
+  const push = (label: string, value: string | undefined | null) => {
+    if (value) rows.push({ label, value });
+  };
+  if (kind === "ip") {
+    push(t("domainCheck.whoisNetworkName"), whois.networkName);
+    push(t("domainCheck.whoisNetworkRange"), whois.networkRange);
+    push(t("domainCheck.whoisCountry"), whois.country);
+    push(t("domainCheck.whoisRir"), whois.rir);
+  } else {
+    push(t("domainCheck.whoisRegistrar"), whois.registrar);
+    push(t("domainCheck.whoisRegistered"), whois.registered ? formatDate(whois.registered) : undefined);
+    push(t("domainCheck.whoisExpires"), whois.expires ? formatDate(whois.expires) : undefined);
+    push(t("domainCheck.whoisNameservers"), whois.nameservers?.length ? whois.nameservers.join(", ") : undefined);
+    push(t("domainCheck.whoisStatus"), whois.status?.length ? whois.status.join(", ") : undefined);
+    push(t("domainCheck.whoisDnssec"), whois.dnssec === undefined ? undefined : whois.dnssec ? t("domainCheck.whoisDnssecSigned") : t("domainCheck.whoisDnssecUnsigned"));
+  }
+  push(t("domainCheck.whoisRegistrantOrg"), whois.registrantOrg);
+  push(t("domainCheck.whoisAdminOrg"), whois.adminOrg);
+  push(t("domainCheck.whoisTechOrg"), whois.techOrg);
+  push(t("domainCheck.whoisAbuse"), [whois.abuseOrg, whois.abuseEmail].filter(Boolean).join(" — "));
+  if (rows.length === 0) {
+    rows.push({ label: t("domainCheck.whoisEmpty"), value: "—" });
+  }
+  return rows;
+}
+
 export function DomainCheckPage() {
   const { t } = useTranslation();
   const { accessToken } = useAuth();
@@ -144,24 +180,15 @@ export function DomainCheckPage() {
                 <CardBody>
                   {result.whois ? (
                     <dl className="divide-y divide-[var(--color-line)]">
-                      <div className="flex items-center justify-between gap-4 py-2 first:pt-0">
-                        <dt className="text-sm text-[var(--color-fog)]">{t("domainCheck.whoisRegistrar")}</dt>
-                        <dd className="text-sm text-[var(--color-snow)]">{result.whois.registrar || "—"}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 py-2">
-                        <dt className="text-sm text-[var(--color-fog)]">{t("domainCheck.whoisRegistered")}</dt>
-                        <dd className="text-sm text-[var(--color-snow)]">{formatDate(result.whois.registered)}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 py-2">
-                        <dt className="text-sm text-[var(--color-fog)]">{t("domainCheck.whoisExpires")}</dt>
-                        <dd className="text-sm text-[var(--color-snow)]">{formatDate(result.whois.expires)}</dd>
-                      </div>
-                      <div className="flex items-center justify-between gap-4 py-2 last:pb-0">
-                        <dt className="text-sm text-[var(--color-fog)]">{t("domainCheck.whoisNameservers")}</dt>
-                        <dd className="max-w-xs text-right text-sm text-[var(--color-snow)]">
-                          {result.whois.nameservers?.length ? result.whois.nameservers.join(", ") : "—"}
-                        </dd>
-                      </div>
+                      {whoisRows(result.whois, result.kind, t).map((row) => (
+                        <div
+                          key={row.label}
+                          className="flex items-center justify-between gap-4 py-2 first:pt-0 last:pb-0"
+                        >
+                          <dt className="text-sm text-[var(--color-fog)]">{row.label}</dt>
+                          <dd className="max-w-xs text-right text-sm text-[var(--color-snow)]">{row.value}</dd>
+                        </div>
+                      ))}
                     </dl>
                   ) : (
                     <p className="text-sm text-[var(--color-muted)]">

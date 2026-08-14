@@ -119,11 +119,22 @@ export type TIResult = {
 };
 
 export type WhoisInfo = {
-  domain: string;
+  domain?: string;
   registrar?: string;
   registered?: string;
   expires?: string;
   nameservers?: string[];
+  registrantOrg?: string;
+  adminOrg?: string;
+  techOrg?: string;
+  abuseOrg?: string;
+  abuseEmail?: string;
+  status?: string[];
+  dnssec?: boolean;
+  networkName?: string;
+  networkRange?: string;
+  country?: string;
+  rir?: string;
 };
 
 export type DomainCheckResult = {
