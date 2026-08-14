@@ -192,12 +192,19 @@ export function SessionViewerPage() {
     void load();
 
     const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    // No console output previously on this socket at all -- when it went quiet there was no
+    // way to tell, from the browser side, whether it closed, why, and whether a reconnect
+    // was even scheduled. Timestamped so it can be lined up against backend log timestamps.
+    const netlog = (msg: string) =>
+      console.log(`[${(performance.now() / 1000).toFixed(3)}] [netmon] ${msg}`);
 
     function connect() {
+      netlog(`connecting (attempt ${attempt})`);
       ws = new WebSocket(
         `${proto}://${window.location.host}/ws/sessions/${sessionId}/netmon?token=${encodeURIComponent(token)}`,
       );
       ws.onopen = () => {
+        netlog("open");
         attempt = 0;
       };
       ws.onmessage = (msg) => {
@@ -211,21 +218,47 @@ export function SessionViewerPage() {
       };
       // The hub silently drops the connection on backend restarts, proxy idle timeouts,
       // or a network blip -- reconnect instead of leaving the traffic panel frozen.
-      ws.onclose = () => {
-        if (closed) return;
+      ws.onclose = (ev) => {
+        if (closed) {
+          netlog(`closed (code=${ev.code}) -- effect torn down, not reconnecting`);
+          return;
+        }
+        const delay = backoffMs(attempt);
+        netlog(`closed (code=${ev.code}, reason=${ev.reason || "none"}) -- reconnecting in ${delay}ms`);
         reconnectTimer = window.setTimeout(() => {
           if (closed) return;
           attempt += 1;
           connect();
-        }, backoffMs(attempt));
+        }, delay);
       };
       ws.onerror = () => ws?.close();
     }
     connect();
 
+    // Backgrounded tabs get their setTimeout calls throttled hard by the browser (can be
+    // minutes between fires) -- a reconnect scheduled with normal exponential backoff while
+    // this tab isn't the active one can sit pending long after the tab is visible again,
+    // which reads as the panel being permanently frozen even though nothing server-side is
+    // actually wrong (same class of bug already fixed for the access-token refresh timer in
+    // AuthContext.tsx, and the pattern usePolling.ts already uses for HTTP polling -- this
+    // WS reconnect just never got the equivalent treatment). Catch up immediately instead of
+    // waiting for a timer that may have been sitting starved of CPU time.
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || closed) return;
+      // Only reconnect if the socket is definitively dead -- OPEN obviously shouldn't be
+      // touched, but CONNECTING/CLOSING also shouldn't be abandoned mid-flight (that would
+      // start a second connection racing the first).
+      if (ws && ws.readyState !== WebSocket.CLOSED) return;
+      netlog("tab visible again, socket was dead -- reconnecting now instead of waiting for the timer");
+      window.clearTimeout(reconnectTimer);
+      connect();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       closed = true;
       window.clearTimeout(reconnectTimer);
+      document.removeEventListener("visibilitychange", onVisible);
       ws?.close();
     };
   }, [accessToken, id, session?.status, features.viewerNetworkEnabled]);
