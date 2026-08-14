@@ -57,9 +57,10 @@ type BrowserSession struct {
 	StartedAt    *time.Time    `json:"startedAt,omitempty"`
 	StoppedAt    *time.Time    `json:"stoppedAt,omitempty"`
 	LastActiveAt *time.Time    `json:"lastActiveAt,omitempty"`
-	// Network taint summary (Stage 18): every distinct domain seen in this session's traffic
-	// checked against Spamhaus/URLhaus once the session stops. NetTaintDomains is a
-	// comma-joined list of the flagged domains (capped, see ti.CheckDomainsAgainstOpenBlocklists).
+	// Network taint summary (Stage 18/19): every distinct domain seen in this session's
+	// traffic checked against Spamhaus/URLhaus plus every enabled local bulk domain feed
+	// (see ti.CheckDomainsAgainstOpenBlocklists) once the session stops. NetTaintDomains is
+	// a comma-joined list of the flagged domains (capped, see the same function).
 	NetTaintChecked bool   `json:"netTaintChecked" gorm:"column:net_taint_checked"`
 	NetTaintTotal   int    `json:"netTaintTotal,omitempty" gorm:"column:net_taint_total"`
 	NetTaintFlagged int    `json:"netTaintFlagged,omitempty" gorm:"column:net_taint_flagged"`
@@ -129,7 +130,7 @@ type AppSettings struct {
 	TiFeedPhishingDBEnabled       bool `json:"tiFeedPhishingdbEnabled" gorm:"column:ti_feed_phishingdb_enabled"`
 	TiFeedOpenPhishEnabled        bool `json:"tiFeedOpenphishEnabled" gorm:"column:ti_feed_openphish_enabled"`
 	TiFeedBlocklistProjectEnabled bool `json:"tiFeedBlocklistprojectEnabled" gorm:"column:ti_feed_blocklistproject_enabled"`
-	TiFeedHaGeziEnabled           bool `json:"tiFeedHagezEnabled" gorm:"column:ti_feed_hagezi_enabled"`
+	TiFeedHaGeziEnabled           bool `json:"tiFeedHageziEnabled" gorm:"column:ti_feed_hagezi_enabled"`
 	TiFeedIPsumEnabled            bool `json:"tiFeedIpsumEnabled" gorm:"column:ti_feed_ipsum_enabled"`
 	TiFeedFireHOLEnabled          bool `json:"tiFeedFireholEnabled" gorm:"column:ti_feed_firehol_enabled"`
 	TiFeedBlocklistDeEnabled      bool `json:"tiFeedBlocklistdeEnabled" gorm:"column:ti_feed_blocklistde_enabled"`

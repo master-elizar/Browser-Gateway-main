@@ -56,6 +56,18 @@ export type AppSettings = {
   tiMalwarebazaarEnabled?: boolean;
   tiMalwarebazaarApiKey?: string;
   tiMalwarebazaarApiKeySet?: boolean;
+  tiCirclhashlookupEnabled?: boolean;
+  tiFeedPhishingdbEnabled?: boolean;
+  tiFeedOpenphishEnabled?: boolean;
+  tiFeedBlocklistprojectEnabled?: boolean;
+  tiFeedHageziEnabled?: boolean;
+  tiFeedIpsumEnabled?: boolean;
+  tiFeedFireholEnabled?: boolean;
+  tiFeedBlocklistdeEnabled?: boolean;
+  tiFeedSpamhausdropEnabled?: boolean;
+  tiFeedCinsarmyEnabled?: boolean;
+  tiFeedEtcompromisedEnabled?: boolean;
+  tiFeedGreensnowEnabled?: boolean;
   viewerWebrtcEnabled?: boolean;
   viewerNovncEnabled?: boolean;
   viewerFitEnabled?: boolean;

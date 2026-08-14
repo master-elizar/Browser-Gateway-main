@@ -169,6 +169,9 @@ func (s *Service) enabledProviders(settings domain.AppSettings, userKeys map[str
 	if settings.TiMalwareBazaarEnabled {
 		out = append(out, enabledProvider{p: malwareBazaarProvider{s: s}, apiKey: resolve("malwarebazaar", settings.TiMalwareBazaarAPIKey)})
 	}
+	if settings.TiCIRCLHashlookupEnabled {
+		out = append(out, enabledProvider{p: circlHashlookupProvider{s: s}})
+	}
 	for _, d := range s.feeds.defs {
 		if d.Enabled(settings) {
 			out = append(out, enabledProvider{p: feedProvider{def: d, fm: s.feeds}})

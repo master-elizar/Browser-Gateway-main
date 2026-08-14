@@ -77,6 +77,18 @@ const empty: AppSettings = {
   tiMalwarebazaarEnabled: false,
   tiMalwarebazaarApiKey: "",
   tiMalwarebazaarApiKeySet: false,
+  tiCirclhashlookupEnabled: false,
+  tiFeedPhishingdbEnabled: false,
+  tiFeedOpenphishEnabled: false,
+  tiFeedBlocklistprojectEnabled: false,
+  tiFeedHageziEnabled: false,
+  tiFeedIpsumEnabled: false,
+  tiFeedFireholEnabled: false,
+  tiFeedBlocklistdeEnabled: false,
+  tiFeedSpamhausdropEnabled: false,
+  tiFeedCinsarmyEnabled: false,
+  tiFeedEtcompromisedEnabled: false,
+  tiFeedGreensnowEnabled: false,
   viewerWebrtcEnabled: true,
   viewerNovncEnabled: true,
   viewerFitEnabled: true,
@@ -756,6 +768,119 @@ export function AdminSettingsPage() {
                         />
                       </Field>
                     </div>
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardHeader title={t("admin.tiFeedsTitle")} description={t("admin.tiFeedsHint")} />
+                  <CardBody className="space-y-3">
+                    <Toggle
+                      checked={Boolean(settings.tiFeedPhishingdbEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedPhishingdbEnabled: !s.tiFeedPhishingdbEnabled }))
+                      }
+                      label={t("admin.tiFeedPhishingdb")}
+                      description={t("admin.tiFeedPhishingdbHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedOpenphishEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedOpenphishEnabled: !s.tiFeedOpenphishEnabled }))
+                      }
+                      label={t("admin.tiFeedOpenphish")}
+                      description={t("admin.tiFeedOpenphishHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedBlocklistprojectEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({
+                          ...s,
+                          tiFeedBlocklistprojectEnabled: !s.tiFeedBlocklistprojectEnabled,
+                        }))
+                      }
+                      label={t("admin.tiFeedBlocklistproject")}
+                      description={t("admin.tiFeedBlocklistprojectHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedHageziEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedHageziEnabled: !s.tiFeedHageziEnabled }))
+                      }
+                      label={t("admin.tiFeedHagezi")}
+                      description={t("admin.tiFeedHageziHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedIpsumEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedIpsumEnabled: !s.tiFeedIpsumEnabled }))
+                      }
+                      label={t("admin.tiFeedIpsum")}
+                      description={t("admin.tiFeedIpsumHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedFireholEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedFireholEnabled: !s.tiFeedFireholEnabled }))
+                      }
+                      label={t("admin.tiFeedFirehol")}
+                      description={t("admin.tiFeedFireholHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedBlocklistdeEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedBlocklistdeEnabled: !s.tiFeedBlocklistdeEnabled }))
+                      }
+                      label={t("admin.tiFeedBlocklistde")}
+                      description={t("admin.tiFeedBlocklistdeHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedSpamhausdropEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({
+                          ...s,
+                          tiFeedSpamhausdropEnabled: !s.tiFeedSpamhausdropEnabled,
+                        }))
+                      }
+                      label={t("admin.tiFeedSpamhausdrop")}
+                      description={t("admin.tiFeedSpamhausdropHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedCinsarmyEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedCinsarmyEnabled: !s.tiFeedCinsarmyEnabled }))
+                      }
+                      label={t("admin.tiFeedCinsarmy")}
+                      description={t("admin.tiFeedCinsarmyHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedEtcompromisedEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({
+                          ...s,
+                          tiFeedEtcompromisedEnabled: !s.tiFeedEtcompromisedEnabled,
+                        }))
+                      }
+                      label={t("admin.tiFeedEtcompromised")}
+                      description={t("admin.tiFeedEtcompromisedHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiFeedGreensnowEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({ ...s, tiFeedGreensnowEnabled: !s.tiFeedGreensnowEnabled }))
+                      }
+                      label={t("admin.tiFeedGreensnow")}
+                      description={t("admin.tiFeedGreensnowHint")}
+                    />
+                    <Toggle
+                      checked={Boolean(settings.tiCirclhashlookupEnabled)}
+                      onChange={() =>
+                        setSettings((s) => ({
+                          ...s,
+                          tiCirclhashlookupEnabled: !s.tiCirclhashlookupEnabled,
+                        }))
+                      }
+                      label={t("admin.tiCirclhashlookup")}
+                      description={t("admin.tiCirclhashlookupHint")}
+                    />
                   </CardBody>
                 </Card>
                 <Button type="submit" disabled={busy}>
