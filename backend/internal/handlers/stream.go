@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/browser-gateway/backend/internal/domain"
 	"github.com/browser-gateway/backend/internal/metrics"
@@ -110,9 +111,28 @@ func (h *Handler) serveVNCProxy(w http.ResponseWriter, r *http.Request, user *do
 	}
 	defer remote.Close()
 
+	// The idle-timeout policy (backend/internal/workers/policy.go) only keeps a session
+	// RUNNING while TouchActivity keeps landing -- before this, that only happened once,
+	// at connect time, above. Real mouse/keyboard use never touched it again, so a session
+	// under continuous active noVNC use would still silently go IDLE (and the frontend's
+	// netmon WS then refuses to reconnect, since it requires status === RUNNING) purely on
+	// wall-clock time since this handler was entered. Rate-limited (not per-frame, to avoid
+	// a DB write per input event) touch on the client->remote direction only -- that's the
+	// real input side; the remote->client direction is just screen updates and would touch
+	// activity even while the user is doing nothing but watching.
+	var lastTouch time.Time
+	touchInput := func() {
+		now := time.Now()
+		if now.Sub(lastTouch) < 20*time.Second {
+			return
+		}
+		lastTouch = now
+		h.sessions.TouchActivity(sessionID)
+	}
+
 	errc := make(chan error, 2)
-	go proxyWS(clientConn, remote, errc)
-	go proxyWS(remote, clientConn, errc)
+	go proxyWS(clientConn, remote, errc, nil)
+	go proxyWS(remote, clientConn, errc, touchInput)
 	<-errc
 }
 
@@ -288,7 +308,10 @@ func (h *Handler) serveControlWS(w http.ResponseWriter, r *http.Request, user *d
 	<-errc
 }
 
-func proxyWS(dst, src *websocket.Conn, errc chan<- error) {
+// onFrame, when non-nil, is called after each frame successfully forwarded in this
+// direction -- used by serveVNCProxy to touch session activity on real input traffic
+// without touching it on every direction of the proxy (see call site).
+func proxyWS(dst, src *websocket.Conn, errc chan<- error, onFrame func()) {
 	for {
 		msgType, data, err := src.ReadMessage()
 		if err != nil {
@@ -298,6 +321,9 @@ func proxyWS(dst, src *websocket.Conn, errc chan<- error) {
 		if err := dst.WriteMessage(msgType, data); err != nil {
 			errc <- err
 			return
+		}
+		if onFrame != nil {
+			onFrame()
 		}
 	}
 }
