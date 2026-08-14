@@ -178,6 +178,7 @@
     "network": "Network",
     "networkEmpty": "Waiting for DNS / HTTP events…",
     "networkTotal": "Events",
+    "networkLimitUnlimited": "unlimited",
     "tabAll": "All",
     "tabDns": "DNS",
     "tabHttp": "HTTP",

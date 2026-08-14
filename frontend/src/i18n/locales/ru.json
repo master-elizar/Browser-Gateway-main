@@ -178,6 +178,7 @@
     "network": "Сеть",
     "networkEmpty": "Ждём DNS / HTTP события…",
     "networkTotal": "Событий",
+    "networkLimitUnlimited": "без лимита",
     "tabAll": "Все",
     "tabDns": "DNS",
     "tabHttp": "HTTP",

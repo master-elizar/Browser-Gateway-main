@@ -1,6 +1,8 @@
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import type { NetworkEventItem, TIResult } from "../api/client";
+import { Button, EmptyState, Field, Input, Segmented, Select } from "./ui";
+import { DataTable } from "./ui/DataTable";
 
 export type NetTab = "all" | "dns" | "http" | "url" | "fqdn" | "ip" | "ti" | "tree" | "netflow";
 export type NetSort = "time_desc" | "time_asc" | "host_asc" | "host_desc" | "status_asc" | "status_desc" | "method_asc" | "url_asc";
@@ -423,11 +425,7 @@ function RequestTreeView({
   }
 
   if (pages.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-[var(--color-line)] px-3 py-8 text-center text-sm text-[var(--color-fog)]">
-        {t("viewer.treeEmpty")}
-      </div>
-    );
+    return <EmptyState title={t("viewer.treeEmpty")} />;
   }
 
   return (
@@ -559,9 +557,9 @@ function TIBadge({ ti }: { ti?: TIResult | null }) {
     ti.verdict === "malicious"
       ? "border-[var(--color-danger)]/50 bg-[var(--color-danger)]/10 text-[var(--color-danger)]"
       : ti.verdict === "suspicious"
-        ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+        ? "border-[var(--color-warn)]/50 bg-[var(--color-warn)]/10 text-[var(--color-warn)]"
         : ti.verdict === "clean"
-          ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
+          ? "border-[var(--color-success)]/50 bg-[var(--color-success)]/10 text-[var(--color-success)]"
           : "border-[var(--color-line)] text-[var(--color-fog)]";
   const total =
     (ti.malicious ?? 0) + (ti.suspicious ?? 0) + (ti.harmless ?? 0) + (ti.undetected ?? 0);
@@ -699,6 +697,9 @@ export type SessionNetworkPanelProps = {
   onClearTab?: (tab: NetTab) => void;
   onClearAll?: () => void;
   onLookup?: (value: string, kind?: string) => void;
+  /** The session's configured event cap (see SessionViewerPage's eventCapFor) -- null means
+   * unlimited, undefined means "not a live session" (history has no cap to show). */
+  eventLimit?: number | null;
 };
 
 export function SessionNetworkPanel({
@@ -712,6 +713,7 @@ export function SessionNetworkPanel({
   onClearTab,
   onClearAll,
   onLookup,
+  eventLimit,
 }: SessionNetworkPanelProps) {
   const { t } = useTranslation();
   const [netTab, setNetTab] = useState<NetTab>("all");
@@ -792,91 +794,85 @@ export function SessionNetworkPanel({
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-mono text-xs text-[var(--color-fog)]">
             {t("viewer.networkTotal")}: {events.length}
+            {eventLimit !== undefined && (
+              <span className="text-[var(--color-muted)]">
+                {" "}
+                / {eventLimit === null ? t("viewer.networkLimitUnlimited") : eventLimit}
+              </span>
+            )}
           </p>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             disabled={readOnly || enrichBusy || events.length === 0 || !onEnrich}
             onClick={() => onEnrich?.()}
-            className="rounded border border-[var(--color-signal)]/40 px-2 py-1 text-xs text-[var(--color-signal-2)] hover:bg-[var(--color-signal-dim)] disabled:opacity-40"
           >
             {enrichBusy ? t("viewer.tiEnriching") : t("viewer.tiEnrich")}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
             disabled={readOnly || clearBusy || filtered.length === 0 || !onClearTab}
             onClick={() => onClearTab?.(netTab)}
-            className="rounded border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-fog)] hover:text-[var(--color-snow)] disabled:opacity-40"
           >
             {t("viewer.clearTab")}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="danger"
             disabled={readOnly || clearBusy || events.length === 0 || !onClearAll}
             onClick={() => onClearAll?.()}
-            className="rounded border border-[var(--color-danger)]/40 px-2 py-1 text-xs text-[var(--color-danger)] disabled:opacity-40"
           >
             {t("viewer.clearAll")}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1 border-b border-[var(--color-line)] pb-2">
-        {(
-          [
-            ["all", t("viewer.tabAll")],
-            ["dns", t("viewer.tabDns")],
-            ["http", t("viewer.tabHttp")],
-            ["url", t("viewer.tabUrl")],
-            ["fqdn", t("viewer.tabFqdn")],
-            ["ip", t("viewer.tabIp")],
-            ["ti", t("viewer.tabTi")],
-            ["tree", t("viewer.tabTree")],
-            ["netflow", t("viewer.tabNetflow")],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setNetTab(key)}
-            className={[
-              "rounded-md px-2.5 py-1.5 text-xs transition",
-              netTab === key
-                ? "bg-[var(--color-panel-2)] text-[var(--color-signal-2)]"
-                : "text-[var(--color-fog)] hover:text-[var(--color-snow)]",
-            ].join(" ")}
-          >
-            {label}
-            <span className="ml-1 font-mono opacity-70">{tabCounts[key]}</span>
-          </button>
-        ))}
+      <div className="mb-3">
+        <Segmented
+          wrap
+          value={netTab}
+          onChange={setNetTab}
+          options={(
+            [
+              ["all", t("viewer.tabAll")],
+              ["dns", t("viewer.tabDns")],
+              ["http", t("viewer.tabHttp")],
+              ["url", t("viewer.tabUrl")],
+              ["fqdn", t("viewer.tabFqdn")],
+              ["ip", t("viewer.tabIp")],
+              ["ti", t("viewer.tabTi")],
+              ["tree", t("viewer.tabTree")],
+              ["netflow", t("viewer.tabNetflow")],
+            ] as const
+          ).map(([key, label]) => ({
+            value: key,
+            label: (
+              <>
+                {label}
+                <span className="ml-1 font-mono opacity-70">{tabCounts[key]}</span>
+              </>
+            ),
+          }))}
+        />
       </div>
 
-      <div className="mb-3 grid gap-2 rounded-lg border border-[var(--color-line)]/70 bg-[var(--color-ink)]/30 p-3 md:grid-cols-2 lg:grid-cols-3">
-        <label className="block space-y-1 text-xs">
-          <span className="text-[var(--color-fog)]">{t("viewer.filterInclude")}</span>
-          <input
+      <div className="mb-3 grid gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)]/40 p-3 md:grid-cols-2 lg:grid-cols-3">
+        <Field label={t("viewer.filterInclude")}>
+          <Input
             value={netInclude}
             onChange={(e) => setNetInclude(e.target.value)}
             placeholder={t("viewer.filterIncludePh")}
-            className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1.5 font-mono text-xs text-[var(--color-snow)]"
+            className="font-mono text-xs"
           />
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="text-[var(--color-fog)]">{t("viewer.filterExclude")}</span>
-          <input
+        </Field>
+        <Field label={t("viewer.filterExclude")}>
+          <Input
             value={netExclude}
             onChange={(e) => setNetExclude(e.target.value)}
             placeholder={t("viewer.filterExcludePh")}
-            className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1.5 font-mono text-xs text-[var(--color-snow)]"
+            className="font-mono text-xs"
           />
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="text-[var(--color-fog)]">{t("viewer.filterSort")}</span>
-          <select
-            value={netSort}
-            onChange={(e) => setNetSort(e.target.value as NetSort)}
-            className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1.5 text-xs text-[var(--color-snow)]"
-          >
+        </Field>
+        <Field label={t("viewer.filterSort")}>
+          <Select value={netSort} onChange={(e) => setNetSort(e.target.value as NetSort)}>
             <option value="time_desc">{t("viewer.sortTimeDesc")}</option>
             <option value="time_asc">{t("viewer.sortTimeAsc")}</option>
             <option value="host_asc">{t("viewer.sortHostAsc")}</option>
@@ -885,15 +881,10 @@ export function SessionNetworkPanel({
             <option value="status_desc">{t("viewer.sortStatusDesc")}</option>
             <option value="method_asc">{t("viewer.sortMethod")}</option>
             <option value="url_asc">{t("viewer.sortUrl")}</option>
-          </select>
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="text-[var(--color-fog)]">{t("viewer.filterStatus")}</span>
-          <select
-            value={netStatus}
-            onChange={(e) => setNetStatus(e.target.value as StatusFilter)}
-            className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1.5 text-xs text-[var(--color-snow)]"
-          >
+          </Select>
+        </Field>
+        <Field label={t("viewer.filterStatus")}>
+          <Select value={netStatus} onChange={(e) => setNetStatus(e.target.value as StatusFilter)}>
             <option value="all">{t("viewer.statusAll")}</option>
             <option value="2xx">2xx</option>
             <option value="3xx">3xx</option>
@@ -901,15 +892,10 @@ export function SessionNetworkPanel({
             <option value="5xx">5xx</option>
             <option value="error">{t("viewer.statusError")}</option>
             <option value="dns_only">{t("viewer.statusDnsOnly")}</option>
-          </select>
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="text-[var(--color-fog)]">{t("viewer.filterMethod")}</span>
-          <select
-            value={netMethod}
-            onChange={(e) => setNetMethod(e.target.value)}
-            className="w-full rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1.5 text-xs text-[var(--color-snow)]"
-          >
+          </Select>
+        </Field>
+        <Field label={t("viewer.filterMethod")}>
+          <Select value={netMethod} onChange={(e) => setNetMethod(e.target.value)}>
             <option value="all">{t("viewer.methodAll")}</option>
             <option value="GET">GET</option>
             <option value="POST">POST</option>
@@ -918,11 +904,12 @@ export function SessionNetworkPanel({
             <option value="DELETE">DELETE</option>
             <option value="HEAD">HEAD</option>
             <option value="OPTIONS">OPTIONS</option>
-          </select>
-        </label>
+          </Select>
+        </Field>
         <div className="flex items-end">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            className="w-full"
             onClick={() => {
               setNetInclude("");
               setNetExclude("");
@@ -930,10 +917,9 @@ export function SessionNetworkPanel({
               setNetStatus("all");
               setNetMethod("all");
             }}
-            className="w-full rounded-md border border-[var(--color-line)] px-2 py-1.5 text-xs text-[var(--color-fog)] hover:text-[var(--color-snow)]"
           >
             {t("viewer.resetFilters")}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -945,9 +931,7 @@ export function SessionNetworkPanel({
 
       <div className="max-h-[420px] overflow-auto">
         {filtered.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[var(--color-line)] px-3 py-8 text-center text-sm text-[var(--color-fog)]">
-            {events.length === 0 ? t("viewer.networkEmpty") : t("viewer.networkFilteredEmpty")}
-          </div>
+          <EmptyState title={events.length === 0 ? t("viewer.networkEmpty") : t("viewer.networkFilteredEmpty")} />
         ) : netTab === "tree" ? (
           <RequestTreeView
             pages={requestTree}
@@ -958,14 +942,14 @@ export function SessionNetworkPanel({
             onLookup={allowCheck ? onLookup! : undefined}
           />
         ) : netTab === "netflow" ? (
-          <table className="w-full text-left text-xs">
-            <thead className="sticky top-0 bg-[var(--color-panel)] text-[var(--color-fog)]">
+          <DataTable>
+            <thead className="sticky top-0">
               <tr>
-                <th className="px-2 py-2 font-medium">{t("viewer.colTime")}</th>
-                <th className="px-2 py-2 font-medium">{t("viewer.colProto")}</th>
-                <th className="px-2 py-2 font-medium">{t("viewer.colDst")}</th>
-                <th className="px-2 py-2 font-medium">{t("viewer.colStatus")}</th>
-                <th className="px-2 py-2 font-medium">{t("viewer.colDetail")}</th>
+                <th>{t("viewer.colTime")}</th>
+                <th>{t("viewer.colProto")}</th>
+                <th>{t("viewer.colDst")}</th>
+                <th>{t("viewer.colStatus")}</th>
+                <th>{t("viewer.colDetail")}</th>
               </tr>
             </thead>
             <tbody>
@@ -980,14 +964,14 @@ export function SessionNetworkPanel({
                     ? "HTTP"
                     : ev.type?.toUpperCase() || "—";
                 return (
-                  <tr key={`${ev.id || idx}-flow`} className="border-t border-[var(--color-line)]/60">
-                    <td className="whitespace-nowrap px-2 py-2 font-mono text-[var(--color-fog)]">
+                  <tr key={`${ev.id || idx}-flow`}>
+                    <td className="whitespace-nowrap font-mono text-[var(--color-fog)]">
                       {ev.ts ? new Date(ev.ts).toLocaleTimeString() : "—"}
                     </td>
-                    <td className="px-2 py-2 font-mono text-[var(--color-signal-2)]">{proto}</td>
-                    <td className="px-2 py-2 font-mono">{host || "—"}</td>
-                    <td className="px-2 py-2 font-mono">{ev.status ?? "—"}</td>
-                    <td className="max-w-[420px] px-2 py-2">
+                    <td className="font-mono text-[var(--color-signal-2)]">{proto}</td>
+                    <td className="font-mono">{host || "—"}</td>
+                    <td className="font-mono">{ev.status ?? "—"}</td>
+                    <td className="max-w-[420px]">
                       <div className="flex items-center gap-2">
                         <span className="min-w-0 truncate">{ev.url || ev.query || "—"}</span>
                         <TICheck
@@ -1005,7 +989,7 @@ export function SessionNetworkPanel({
                 );
               })}
             </tbody>
-          </table>
+          </DataTable>
         ) : (
           <div className="space-y-2">
             {filtered.map((ev, idx) => {

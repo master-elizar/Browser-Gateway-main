@@ -59,16 +59,19 @@ export function Segmented<T extends string>({
   value,
   onChange,
   fullWidth = false,
+  wrap = false,
 }: {
-  options: { value: T; label: string }[];
+  options: { value: T; label: ReactNode }[];
   value: T;
   onChange: (value: T) => void;
   /** Stretch to fill the container with equal-width segments (e.g. a form's own tab bar). */
   fullWidth?: boolean;
+  /** Allow segments to wrap onto multiple rows instead of overflowing (e.g. a long tab list). */
+  wrap?: boolean;
 }) {
   return (
     <div
-      className={`${fullWidth ? "flex" : "inline-flex"} rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] p-1`}
+      className={`${fullWidth ? "flex" : "inline-flex"} ${wrap ? "flex-wrap" : ""} rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-panel-2)] p-1`}
     >
       {options.map((opt) => {
         const active = opt.value === value;

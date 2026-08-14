@@ -782,6 +782,7 @@ export function SessionViewerPage() {
         <SessionNetworkPanel
           events={events}
           tiOverlay={tiOverlay}
+          eventLimit={eventCap}
           enrichBusy={enrichBusy}
           clearBusy={clearBusy}
           lookupBusy={lookupBusy}
