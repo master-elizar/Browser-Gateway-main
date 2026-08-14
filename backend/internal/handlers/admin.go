@@ -119,6 +119,21 @@ func (h *Handler) AdminPutSettings(c *fiber.Ctx) error {
 	s.TiCrtShEnabled = incoming.TiCrtShEnabled
 	s.TiFeodoEnabled = incoming.TiFeodoEnabled
 	s.TiMalwareBazaarEnabled = incoming.TiMalwareBazaarEnabled
+	s.TiFeedPhishingDBEnabled = incoming.TiFeedPhishingDBEnabled
+	s.TiFeedOpenPhishEnabled = incoming.TiFeedOpenPhishEnabled
+	s.TiFeedBlocklistProjectEnabled = incoming.TiFeedBlocklistProjectEnabled
+	s.TiFeedHaGeziEnabled = incoming.TiFeedHaGeziEnabled
+	s.TiFeedIPsumEnabled = incoming.TiFeedIPsumEnabled
+	s.TiFeedFireHOLEnabled = incoming.TiFeedFireHOLEnabled
+	s.TiFeedBlocklistDeEnabled = incoming.TiFeedBlocklistDeEnabled
+	s.TiFeedSpamhausDropEnabled = incoming.TiFeedSpamhausDropEnabled
+	s.TiFeedCINSArmyEnabled = incoming.TiFeedCINSArmyEnabled
+	s.TiFeedETCompromisedEnabled = incoming.TiFeedETCompromisedEnabled
+	s.TiFeedGreenSnowEnabled = incoming.TiFeedGreenSnowEnabled
+	s.TiCIRCLHashlookupEnabled = incoming.TiCIRCLHashlookupEnabled
+	if s.FeedsUIVersion < 1 {
+		s.FeedsUIVersion = 1
+	}
 	if incoming.TiProvider != "" {
 		s.TiProvider = incoming.TiProvider
 	} else if s.TiProvider == "" {

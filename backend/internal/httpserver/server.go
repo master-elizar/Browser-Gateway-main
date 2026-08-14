@@ -8,6 +8,7 @@ import (
 
 	"github.com/browser-gateway/backend/internal/auth"
 	"github.com/browser-gateway/backend/internal/config"
+	"github.com/browser-gateway/backend/internal/domain"
 	"github.com/browser-gateway/backend/internal/handlers"
 	"github.com/browser-gateway/backend/internal/metrics"
 	"github.com/browser-gateway/backend/internal/netmon"
@@ -55,6 +56,7 @@ func New(cfg *config.Config) (*Server, error) {
 	_ = st.BackfillDNSDefaults()
 	_ = st.BackfillTIDefaults()
 	_ = st.BackfillViewerUIDefaults()
+	_ = st.BackfillFeedDefaults()
 
 	orch, err := orchestrator.New(cfg)
 	if err != nil {
@@ -65,6 +67,11 @@ func New(cfg *config.Config) (*Server, error) {
 	tokens := auth.NewTokenService(cfg.JWTSecret, cfg.AccessTokenTTL, cfg.RefreshTokenTTL)
 	authSvc := auth.NewService(st.DB, tokens)
 	tiSvc := ti.New(st.DB)
+	tiSvc.StartFeedRefresher(func() domain.AppSettings {
+		var s domain.AppSettings
+		_ = st.DB.First(&s).Error
+		return s
+	})
 	sess := sessions.New(st.DB, orch, tiSvc)
 	hub := netmon.NewHub()
 	sig := signaling.NewHub()

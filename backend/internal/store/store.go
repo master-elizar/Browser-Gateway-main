@@ -159,6 +159,35 @@ func (s *Store) BackfillViewerUIDefaults() error {
 	}).Error
 }
 
+// BackfillFeedDefaults turns every local bulk threat-intel feed on once for existing
+// installs, matching the "works out of the box, no key setup" goal — mirrors
+// BackfillViewerUIDefaults's version-guard pattern so it never re-enables a feed a user
+// deliberately turned back off.
+func (s *Store) BackfillFeedDefaults() error {
+	var settings domain.AppSettings
+	if err := s.DB.First(&settings).Error; err != nil {
+		return err
+	}
+	if settings.FeedsUIVersion >= 1 {
+		return nil
+	}
+	return s.DB.Model(&settings).Updates(map[string]any{
+		"feeds_ui_version":                 1,
+		"ti_feed_phishingdb_enabled":       true,
+		"ti_feed_openphish_enabled":        true,
+		"ti_feed_blocklistproject_enabled": true,
+		"ti_feed_hagezi_enabled":           true,
+		"ti_feed_ipsum_enabled":            true,
+		"ti_feed_firehol_enabled":          true,
+		"ti_feed_blocklistde_enabled":      true,
+		"ti_feed_spamhausdrop_enabled":     true,
+		"ti_feed_cinsarmy_enabled":         true,
+		"ti_feed_etcompromised_enabled":    true,
+		"ti_feed_greensnow_enabled":        true,
+		"ti_circlhashlookup_enabled":       true,
+	}).Error
+}
+
 func (s *Store) Ping(ctx context.Context) error {
 	sqlDB, err := s.DB.DB()
 	if err != nil {

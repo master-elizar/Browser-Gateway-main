@@ -121,6 +121,24 @@ type AppSettings struct {
 	TiMalwareBazaarEnabled bool   `json:"tiMalwarebazaarEnabled" gorm:"column:ti_malwarebazaar_enabled"`
 	TiMalwareBazaarAPIKey  string `json:"tiMalwarebazaarApiKey,omitempty" gorm:"column:ti_malwarebazaar_api_key"`
 
+	// Local bulk threat-intel feeds (Stage 19) — free, no-key blocklists downloaded and
+	// matched in memory (see internal/ti/feeds.go). FeedsUIVersion=0 means "not migrated
+	// yet"; a startup backfill turns every feed on once for existing installs so the
+	// out-of-the-box promise holds without forcing a resave of settings.
+	FeedsUIVersion                int  `json:"-" gorm:"column:feeds_ui_version;default:0"`
+	TiFeedPhishingDBEnabled       bool `json:"tiFeedPhishingdbEnabled" gorm:"column:ti_feed_phishingdb_enabled"`
+	TiFeedOpenPhishEnabled        bool `json:"tiFeedOpenphishEnabled" gorm:"column:ti_feed_openphish_enabled"`
+	TiFeedBlocklistProjectEnabled bool `json:"tiFeedBlocklistprojectEnabled" gorm:"column:ti_feed_blocklistproject_enabled"`
+	TiFeedHaGeziEnabled           bool `json:"tiFeedHagezEnabled" gorm:"column:ti_feed_hagezi_enabled"`
+	TiFeedIPsumEnabled            bool `json:"tiFeedIpsumEnabled" gorm:"column:ti_feed_ipsum_enabled"`
+	TiFeedFireHOLEnabled          bool `json:"tiFeedFireholEnabled" gorm:"column:ti_feed_firehol_enabled"`
+	TiFeedBlocklistDeEnabled      bool `json:"tiFeedBlocklistdeEnabled" gorm:"column:ti_feed_blocklistde_enabled"`
+	TiFeedSpamhausDropEnabled     bool `json:"tiFeedSpamhausdropEnabled" gorm:"column:ti_feed_spamhausdrop_enabled"`
+	TiFeedCINSArmyEnabled         bool `json:"tiFeedCinsarmyEnabled" gorm:"column:ti_feed_cinsarmy_enabled"`
+	TiFeedETCompromisedEnabled    bool `json:"tiFeedEtcompromisedEnabled" gorm:"column:ti_feed_etcompromised_enabled"`
+	TiFeedGreenSnowEnabled        bool `json:"tiFeedGreensnowEnabled" gorm:"column:ti_feed_greensnow_enabled"`
+	TiCIRCLHashlookupEnabled      bool `json:"tiCirclhashlookupEnabled" gorm:"column:ti_circlhashlookup_enabled"`
+
 	// Session viewer UI toggles (0.16.4). ViewerUIVersion=0 means "not migrated yet".
 	ViewerUIVersion          int  `json:"-" gorm:"column:viewer_ui_version;default:0"`
 	ViewerWebRTCEnabled      bool `json:"viewerWebrtcEnabled" gorm:"column:viewer_webrtc_enabled"`

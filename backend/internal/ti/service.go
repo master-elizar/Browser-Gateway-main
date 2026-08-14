@@ -34,15 +34,19 @@ type Service struct {
 	feodoMu      sync.Mutex
 	feodoSet     map[string]string // ip -> malware family
 	feodoFetched time.Time
+
+	feeds *FeedManager
 }
 
 func New(db *gorm.DB) *Service {
+	client := &http.Client{
+		Timeout: 12 * time.Second,
+	}
 	return &Service{
-		db: db,
-		client: &http.Client{
-			Timeout: 12 * time.Second,
-		},
+		db:       db,
+		client:   client,
 		vtMinGap: 16 * time.Second,
+		feeds:    newFeedManager(&http.Client{Timeout: 60 * time.Second}),
 	}
 }
 
@@ -164,6 +168,11 @@ func (s *Service) enabledProviders(settings domain.AppSettings, userKeys map[str
 	}
 	if settings.TiMalwareBazaarEnabled {
 		out = append(out, enabledProvider{p: malwareBazaarProvider{s: s}, apiKey: resolve("malwarebazaar", settings.TiMalwareBazaarAPIKey)})
+	}
+	for _, d := range s.feeds.defs {
+		if d.Enabled(settings) {
+			out = append(out, enabledProvider{p: feedProvider{def: d, fm: s.feeds}})
+		}
 	}
 	return out
 }
