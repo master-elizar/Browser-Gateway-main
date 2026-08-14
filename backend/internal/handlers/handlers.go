@@ -181,7 +181,7 @@ func (h *Handler) Version(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"name":    "browser-gateway",
 		"stage":   15,
-		"version": "0.17.7",
+		"version": "1.0.0",
 		"env":     h.cfg.AppEnv,
 	})
 }

@@ -4,7 +4,7 @@
 #   ./scripts/build-deb.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-VERSION="${BG_DEB_VERSION:-0.9.5}"
+VERSION="${BG_DEB_VERSION:-1.0.0}"
 ARCH="${BG_DEB_ARCH:-amd64}"
 OUT_DIR="${BG_DEB_OUT:-$ROOT/dist}"
 STAGE="$OUT_DIR/browser-gateway_${VERSION}_${ARCH}"

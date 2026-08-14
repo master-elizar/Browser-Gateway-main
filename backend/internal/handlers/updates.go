@@ -14,7 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-const localVersion = "0.17.7"
+const localVersion = "1.0.0"
 
 // Markers older than this are treated as stale so a failed host apply cannot
 // permanently lock the Update button.
