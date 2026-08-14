@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, type HistoryDetail } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Skeleton, ToolButton } from "../components/ui";
+import { Alert, Badge, Button, Card, CardBody, CardHeader, Skeleton, StreamPlaceholder, ToolButton } from "../components/ui";
 import {
   SessionNetworkPanel,
   normalizeHistoryNetworkEvents,
@@ -130,31 +130,16 @@ export function HistoryDetailPage() {
             {t("viewer.network")}
           </ToolButton>
           {user?.role === "SUPER_ADMIN" && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onDelete()}
-              className="rounded-lg border border-[var(--color-danger)]/50 px-3 py-1.5 text-sm text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 disabled:opacity-50"
-            >
+            <Button variant="danger" disabled={busy} onClick={() => void onDelete()}>
               {t("history.delete")}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
-          {error}
-        </div>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
       {sess?.netTaintChecked && (sess.netTaintTotal ?? 0) > 0 && (
-        <div
-          className={
-            (sess.netTaintFlagged ?? 0) > 0
-              ? "rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]"
-              : "rounded-lg border border-[var(--color-success)]/40 bg-[var(--color-success)]/10 px-4 py-3 text-sm text-[var(--color-success)]"
-          }
-        >
+        <Alert tone={(sess.netTaintFlagged ?? 0) > 0 ? "danger" : "success"}>
           {(sess.netTaintFlagged ?? 0) > 0
             ? t("viewer.netTaintFlagged", {
                 flagged: sess.netTaintFlagged,
@@ -162,7 +147,7 @@ export function HistoryDetailPage() {
                 domains: (sess.netTaintDomains || []).join(", "),
               })
             : t("viewer.netTaintClean", { total: sess.netTaintTotal })}
-        </div>
+        </Alert>
       )}
 
       <div
@@ -176,12 +161,7 @@ export function HistoryDetailPage() {
             className="absolute inset-0 h-full w-full object-contain"
           />
         ) : (
-          <div className="grid h-full place-items-center p-6 text-center">
-            <div>
-              <div className="text-lg text-[var(--color-snow)]">{t("history.noFrames")}</div>
-              <p className="mt-2 text-sm text-[var(--color-fog)]">{t("history.timelineEmpty")}</p>
-            </div>
-          </div>
+          <StreamPlaceholder title={t("history.noFrames")} subtitle={t("history.timelineEmpty")} />
         )}
         {selected && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-4 pb-3 pt-10">
@@ -204,54 +184,56 @@ export function HistoryDetailPage() {
       </div>
 
       {frames.length > 0 && (
-        <div className="ui-card space-y-2 p-3">
-          <div className="flex items-center justify-between gap-2 px-1">
-            <h2 className="text-xs font-medium uppercase tracking-wider text-[var(--color-fog)]">
-              {t("history.filmstrip")}
-            </h2>
-            <div className="flex gap-1">
-              <ToolButton onClick={() => selectFrame(selectedIdx - 1)}>{t("history.prev")}</ToolButton>
-              <ToolButton onClick={() => selectFrame(selectedIdx + 1)}>{t("history.next")}</ToolButton>
+        <Card>
+          <CardHeader
+            title={t("history.filmstrip")}
+            action={
+              <div className="flex gap-1">
+                <ToolButton onClick={() => selectFrame(selectedIdx - 1)}>{t("history.prev")}</ToolButton>
+                <ToolButton onClick={() => selectFrame(selectedIdx + 1)}>{t("history.next")}</ToolButton>
+              </div>
+            }
+          />
+          <CardBody>
+            <div
+              ref={stripRef}
+              className="flex gap-2 overflow-x-auto pb-1 scroll-smooth"
+              style={{ scrollbarWidth: "thin" }}
+            >
+              {frames.map((f, idx) => {
+                const active = idx === selectedIdx;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    data-frame-idx={idx}
+                    onClick={() => selectFrame(idx)}
+                    className={[
+                      "group relative h-20 w-32 shrink-0 overflow-hidden rounded-md border bg-black transition",
+                      active
+                        ? "border-[var(--color-signal)] ring-1 ring-[var(--color-signal)]/50"
+                        : "border-[var(--color-line)] opacity-80 hover:opacity-100",
+                    ].join(" ")}
+                    title={f.createdAt.replace("T", " ").slice(0, 19)}
+                  >
+                    {id && accessToken && (
+                      <AuthImage
+                        src={api.historyFrameUrl(id, f.id)}
+                        token={accessToken}
+                        className="h-full w-full object-cover"
+                        thumb
+                      />
+                    )}
+                    <span className="absolute bottom-0 inset-x-0 bg-black/65 px-1 py-0.5 font-mono text-[9px] text-[var(--color-fog)]">
+                      {String(idx + 1).padStart(2, "0")} ·{" "}
+                      {f.kind === "navigate" ? t("history.kindNavigate") : t("history.kindClick")}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
-          <div
-            ref={stripRef}
-            className="flex gap-2 overflow-x-auto pb-1 scroll-smooth"
-            style={{ scrollbarWidth: "thin" }}
-          >
-            {frames.map((f, idx) => {
-              const active = idx === selectedIdx;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  data-frame-idx={idx}
-                  onClick={() => selectFrame(idx)}
-                  className={[
-                    "group relative h-20 w-32 shrink-0 overflow-hidden rounded-md border bg-black transition",
-                    active
-                      ? "border-[var(--color-signal)] ring-1 ring-[var(--color-signal)]/50"
-                      : "border-[var(--color-line)] opacity-80 hover:opacity-100",
-                  ].join(" ")}
-                  title={f.createdAt.replace("T", " ").slice(0, 19)}
-                >
-                  {id && accessToken && (
-                    <AuthImage
-                      src={api.historyFrameUrl(id, f.id)}
-                      token={accessToken}
-                      className="h-full w-full object-cover"
-                      thumb
-                    />
-                  )}
-                  <span className="absolute bottom-0 inset-x-0 bg-black/65 px-1 py-0.5 font-mono text-[9px] text-[var(--color-fog)]">
-                    {String(idx + 1).padStart(2, "0")} ·{" "}
-                    {f.kind === "navigate" ? t("history.kindNavigate") : t("history.kindClick")}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+          </CardBody>
+        </Card>
       )}
 
       {netOpen && <SessionNetworkPanel events={events} readOnly />}

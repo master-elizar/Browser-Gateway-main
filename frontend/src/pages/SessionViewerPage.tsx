@@ -12,7 +12,18 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { WebRTCViewer } from "../components/WebRTCViewer";
 import { SessionNetworkPanel, type NetTab } from "../components/SessionNetworkPanel";
-import { Alert, Button, Card, CardBody, CardHeader, EmptyState, Input, Skeleton, ToolButton } from "../components/ui";
+import {
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  Input,
+  Skeleton,
+  StreamPlaceholder,
+  ToolButton,
+} from "../components/ui";
 import { IconClose } from "../components/ui/icons";
 import { usePolling } from "../hooks/usePolling";
 import { backoffMs } from "../lib/reconnect";
@@ -761,19 +772,6 @@ export function SessionViewerPage() {
         />
       )}
 
-    </div>
-  );
-}
-
-function StreamPlaceholder({ title, subtitle, mono }: { title: string; subtitle?: string; mono?: boolean }) {
-  return (
-    <div className="grid h-full place-items-center p-6 text-center">
-      <div>
-        <div className="text-lg text-[var(--color-snow)]">{title}</div>
-        {subtitle && (
-          <p className={`mt-2 text-sm text-[var(--color-fog)] ${mono ? "font-mono text-xs" : ""}`}>{subtitle}</p>
-        )}
-      </div>
     </div>
   );
 }

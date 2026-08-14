@@ -262,6 +262,29 @@ export function EmptyState({
   );
 }
 
+// Larger-text centered placeholder for a full video-frame area (session viewer stream,
+// history frame view) -- distinct from EmptyState, which is tuned for smaller inline lists.
+export function StreamPlaceholder({
+  title,
+  subtitle,
+  mono,
+}: {
+  title: string;
+  subtitle?: string;
+  mono?: boolean;
+}) {
+  return (
+    <div className="grid h-full place-items-center p-6 text-center">
+      <div>
+        <div className="text-lg text-[var(--color-snow)]">{title}</div>
+        {subtitle && (
+          <p className={`mt-2 text-sm text-[var(--color-fog)] ${mono ? "font-mono text-xs" : ""}`}>{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`skeleton ${className}`.trim()} />;
 }
