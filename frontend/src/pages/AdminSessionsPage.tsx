@@ -4,40 +4,31 @@ import { useTranslation } from "react-i18next";
 import { api, type BrowserSession } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { usePolling } from "../hooks/usePolling";
-import { Alert, Badge, Button, EmptyState, PageHeader } from "../components/ui";
+import { statusTone, hasTransientStatus } from "../lib/sessionStatus";
+import { Alert, Badge, Button, EmptyState, PageHeader, Skeleton } from "../components/ui";
 import { DataTable } from "../components/ui/DataTable";
 import { IconEmpty, IconRefresh } from "../components/ui/icons";
-
-function statusTone(status: string): "success" | "warn" | "danger" | "neutral" | "accent" {
-  const s = status.toLowerCase();
-  if (s.includes("run")) return "success";
-  if (s.includes("err") || s.includes("fail")) return "danger";
-  if (s.includes("pend") || s.includes("creat") || s.includes("start") || s.includes("idle")) return "warn";
-  if (s.includes("stop") || s.includes("end")) return "neutral";
-  return "accent";
-}
-
-function hasTransientStatus(items: BrowserSession[]): boolean {
-  return items.some((s) => {
-    const v = s.status.toLowerCase();
-    return v.includes("creat") || v.includes("start") || v.includes("stop");
-  });
-}
 
 export function AdminSessionsPage() {
   const { t } = useTranslation();
   const { accessToken } = useAuth();
   const [items, setItems] = useState<BrowserSession[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await api.listAdminSessions(accessToken);
       setItems(res.items);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "error");
+    } finally {
+      setLoading(false);
     }
   }, [accessToken]);
 
@@ -70,6 +61,14 @@ export function AdminSessionsPage() {
 
       {error && <Alert tone="danger">{error}</Alert>}
 
+      {loading ? (
+        <div className="ui-card space-y-3 p-5">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
+      ) : (
       <DataTable>
         <thead>
           <tr>
@@ -124,6 +123,7 @@ export function AdminSessionsPage() {
           )}
         </tbody>
       </DataTable>
+      )}
     </div>
   );
 }

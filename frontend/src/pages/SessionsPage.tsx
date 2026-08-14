@@ -5,6 +5,7 @@ import { api, type BrowserSession, type CreateSessionInput } from "../api/client
 import { useAuth, isNotImplemented } from "../auth/AuthContext";
 import { LaunchConstructor } from "../components/LaunchConstructor";
 import { usePolling } from "../hooks/usePolling";
+import { statusTone, hasTransientStatus } from "../lib/sessionStatus";
 import {
   Alert,
   Badge,
@@ -16,25 +17,6 @@ import {
 import { DataTable } from "../components/ui/DataTable";
 import { IconEmpty, IconPlus } from "../components/ui/icons";
 import { useToast } from "../components/ui/Toast";
-
-function statusTone(status: string): "success" | "warn" | "danger" | "neutral" | "accent" {
-  const s = status.toLowerCase();
-  if (s.includes("run")) return "success";
-  if (s.includes("err") || s.includes("fail")) return "danger";
-  if (s.includes("pend") || s.includes("creat") || s.includes("start")) return "warn";
-  if (s.includes("stop") || s.includes("end")) return "neutral";
-  return "accent";
-}
-
-// While any session is mid-transition (booting or tearing down), poll tight enough to
-// catch it landing on RUNNING within a few seconds. Once everything's stable, back off --
-// a slow keepalive poll still catches server-side drift (admin stop, idle timeout).
-function hasTransientStatus(items: BrowserSession[]): boolean {
-  return items.some((s) => {
-    const v = s.status.toLowerCase();
-    return v.includes("creat") || v.includes("start") || v.includes("stop");
-  });
-}
 
 export function SessionsPage() {
   const { t } = useTranslation();

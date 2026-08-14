@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { Button, Skeleton } from "./ui";
 
 type UpdateProgress = {
   percent: number;
@@ -145,18 +146,17 @@ export function AdminUpdatesPanel() {
     });
   }, [activeIdx, done, failed]);
 
+  if (!info && !error) {
+    return <Skeleton className="h-32" />;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-[var(--color-fog)]">{t("admin.updatesHint")}</p>
-        <button
-          type="button"
-          className="btn-ghost shrink-0"
-          disabled={checking || !accessToken}
-          onClick={() => void onCheck()}
-        >
+        <Button variant="ghost" className="shrink-0" disabled={checking || !accessToken} onClick={() => void onCheck()}>
           {checking ? t("common.loading") : t("admin.updatesCheck")}
-        </button>
+        </Button>
       </div>
 
       {info && (
@@ -327,10 +327,8 @@ export function AdminUpdatesPanel() {
       {msg && <div className="text-sm text-[var(--color-signal-2)]">{msg}</div>}
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
+        <Button
           disabled={!canApply}
-          className="btn-primary"
           title={
             info?.updatePending
               ? t("admin.updatesPending")
@@ -362,12 +360,11 @@ export function AdminUpdatesPanel() {
           }}
         >
           {busy ? t("common.loading") : t("admin.updatesApply")}
-        </button>
+        </Button>
 
         {canForce && (
-          <button
-            type="button"
-            className="btn-ghost"
+          <Button
+            variant="ghost"
             disabled={busy || !accessToken}
             title={t("admin.updatesForceHint")}
             onClick={async () => {
@@ -389,16 +386,15 @@ export function AdminUpdatesPanel() {
             }}
           >
             {t("admin.updatesForce")}
-          </button>
+          </Button>
         )}
 
         {(info?.updatePending ||
           info?.pendingStale ||
           (progress?.done && failed) ||
           (progress?.done && done)) && (
-          <button
-            type="button"
-            className="btn-ghost"
+          <Button
+            variant="ghost"
             disabled={busy || !accessToken}
             onClick={async () => {
               if (!accessToken) return;
@@ -417,7 +413,7 @@ export function AdminUpdatesPanel() {
             }}
           >
             {done ? t("admin.updatesDismissProgress") : t("admin.updatesClearPending")}
-          </button>
+          </Button>
         )}
       </div>
     </div>

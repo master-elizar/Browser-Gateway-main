@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type TLSStatus } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { Alert, Button, Field, Input, Segmented, Select, Skeleton, Textarea } from "./ui";
 
 type InputMode = "file" | "text";
 type Format = "pem" | "pkcs12";
@@ -106,21 +107,17 @@ export function AdminTLSPanel({
     }
   }
 
+  if (!tls && !error) {
+    return <Skeleton className="h-48" />;
+  }
+
   return (
     <div className="space-y-4">
-      {error && (
-        <div className="rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
-          {error}
-        </div>
-      )}
-      {msg && (
-        <div className="rounded-lg border border-[var(--color-signal)]/40 bg-[var(--color-signal)]/10 px-4 py-3 text-sm text-[var(--color-signal-2)]">
-          {msg}
-        </div>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
+      {msg && <Alert tone="info">{msg}</Alert>}
 
       {tls && (
-        <div className="rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)]/40 px-3 py-2 font-mono text-xs text-[var(--color-fog)]">
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-line)] bg-[var(--color-ink)]/40 px-3 py-2 font-mono text-xs text-[var(--color-fog)]">
           <div>
             {tls.configured ? t("admin.tlsConfigured") : t("admin.tlsMissing")}
             {tls.pendingRestart ? ` · ${t("admin.tlsPendingShort")}` : ""}
@@ -134,45 +131,39 @@ export function AdminTLSPanel({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Toggle
-          left={t("admin.tlsModeFile")}
-          right={t("admin.tlsModeText")}
-          value={inputMode === "text"}
-          onChange={(text) => setInputMode(text ? "text" : "file")}
+      <div className="flex flex-wrap items-center gap-2">
+        <Segmented
+          value={inputMode}
+          onChange={setInputMode}
+          options={[
+            { value: "file", label: t("admin.tlsModeFile") },
+            { value: "text", label: t("admin.tlsModeText") },
+          ]}
         />
-        <select
-          className="rounded-lg border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1.5 text-sm"
-          value={format}
-          onChange={(e) => setFormat(e.target.value as Format)}
-        >
+        <Select className="!w-auto" value={format} onChange={(e) => setFormat(e.target.value as Format)}>
           <option value="pem">PEM / CRT+KEY</option>
           <option value="pkcs12">PKCS#12 (.p12/.pfx)</option>
-        </select>
+        </Select>
         {format === "pem" && (
-          <button
-            type="button"
-            className="rounded-lg border border-[var(--color-line)] px-3 py-1.5 text-sm text-[var(--color-fog)] hover:text-[var(--color-snow)]"
-            onClick={() => setShowChain((v) => !v)}
-          >
+          <Button variant="ghost" onClick={() => setShowChain((v) => !v)}>
             {showChain ? t("admin.tlsHideChain") : t("admin.tlsShowChain")}
-          </button>
+          </Button>
         )}
       </div>
 
         {format === "pem" && inputMode === "text" && (
           <div className="grid gap-3">
             <Field label={t("admin.tlsCert")}>
-              <textarea
-                className="input-field min-h-28 font-mono text-xs"
+              <Textarea
+                className="min-h-28 font-mono text-xs"
                 value={certPem}
                 onChange={(e) => setCertPem(e.target.value)}
                 placeholder="-----BEGIN CERTIFICATE-----"
               />
             </Field>
             <Field label={t("admin.tlsKey")}>
-              <textarea
-                className="input-field min-h-28 font-mono text-xs"
+              <Textarea
+                className="min-h-28 font-mono text-xs"
                 value={keyPem}
                 onChange={(e) => setKeyPem(e.target.value)}
                 placeholder="-----BEGIN PRIVATE KEY-----"
@@ -180,8 +171,8 @@ export function AdminTLSPanel({
             </Field>
             {showChain && (
               <Field label={t("admin.tlsChain")}>
-                <textarea
-                  className="input-field min-h-24 font-mono text-xs"
+                <Textarea
+                  className="min-h-24 font-mono text-xs"
                   value={chainPem}
                   onChange={(e) => setChainPem(e.target.value)}
                   placeholder="-----BEGIN CERTIFICATE-----"
@@ -249,8 +240,8 @@ export function AdminTLSPanel({
               </Field>
             ) : (
               <Field label={t("admin.tlsPkcs12B64")}>
-                <textarea
-                  className="input-field min-h-24 font-mono text-xs"
+                <Textarea
+                  className="min-h-24 font-mono text-xs"
                   value={pkcs12B64}
                   onChange={(e) => setPkcs12B64(e.target.value)}
                   placeholder="base64…"
@@ -258,9 +249,9 @@ export function AdminTLSPanel({
               </Field>
             )}
             <Field label={t("admin.tlsPkcs12Pass")}>
-              <input
+              <Input
                 type="password"
-                className="input-field max-w-md"
+                className="max-w-md"
                 value={pkcs12Pass}
                 onChange={(e) => setPkcs12Pass(e.target.value)}
                 placeholder="••••••••"
@@ -271,28 +262,18 @@ export function AdminTLSPanel({
         )}
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onSave(true)}
-            className="btn-primary shrink-0"
-          >
+          <Button disabled={busy} onClick={() => void onSave(true)} className="shrink-0">
             {t("admin.tlsSaveApply")}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onSave(false)}
-            className="btn-ghost shrink-0"
-          >
+          </Button>
+          <Button variant="ghost" disabled={busy} onClick={() => void onSave(false)} className="shrink-0">
             {t("admin.tlsSaveLater")}
-          </button>
+          </Button>
           {tls?.pendingRestart && (
             <button
               type="button"
               disabled={busy}
               onClick={() => void onApply()}
-              className="shrink-0 rounded-lg border border-[var(--color-warn)]/50 px-4 py-2 text-sm text-[var(--color-warn)] hover:bg-[var(--color-warn)]/10 disabled:opacity-60"
+              className="shrink-0 rounded-[var(--radius-md)] border border-[var(--color-warn)]/50 px-4 py-2 text-sm text-[var(--color-warn)] hover:bg-[var(--color-warn)]/10 disabled:opacity-60"
             >
               {t("admin.tlsRestartNow")}
             </button>
@@ -302,42 +283,3 @@ export function AdminTLSPanel({
   );
 }
 
-function Toggle({
-  left,
-  right,
-  value,
-  onChange,
-}: {
-  left: string;
-  right: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line)] p-1 text-sm">
-      <button
-        type="button"
-        className={`rounded-md px-3 py-1 ${!value ? "bg-[var(--color-panel-2)] text-[var(--color-snow)]" : "text-[var(--color-fog)]"}`}
-        onClick={() => onChange(false)}
-      >
-        {left}
-      </button>
-      <button
-        type="button"
-        className={`rounded-md px-3 py-1 ${value ? "bg-[var(--color-panel-2)] text-[var(--color-snow)]" : "text-[var(--color-fog)]"}`}
-        onClick={() => onChange(true)}
-      >
-        {right}
-      </button>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block space-y-1 text-sm">
-      <span className="text-[var(--color-fog)]">{label}</span>
-      {children}
-    </label>
-  );
-}

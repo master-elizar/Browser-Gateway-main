@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { api, type AuditEvent } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { Alert, Badge, Button, EmptyState, Input, PageHeader } from "../components/ui";
+import { Alert, Badge, Button, EmptyState, Input, PageHeader, Skeleton } from "../components/ui";
 import { DataTable } from "../components/ui/DataTable";
 import { IconEmpty, IconRefresh } from "../components/ui/icons";
 
@@ -44,9 +44,13 @@ export function AdminAuditPage() {
   const [live, setLive] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await api.listAudit(accessToken, {
         type: typeFilter || undefined,
@@ -62,6 +66,8 @@ export function AdminAuditPage() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "error");
+    } finally {
+      setLoading(false);
     }
   }, [accessToken, typeFilter, userFilter, sessionFilter]);
 
@@ -156,6 +162,14 @@ export function AdminAuditPage() {
 
       {error && <Alert tone="danger">{error}</Alert>}
 
+      {loading ? (
+        <div className="ui-card space-y-3 p-5">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
+      ) : (
       <DataTable className="table-fixed">
         <thead>
           <tr>
@@ -204,6 +218,7 @@ export function AdminAuditPage() {
           )}
         </tbody>
       </DataTable>
+      )}
     </div>
   );
 }

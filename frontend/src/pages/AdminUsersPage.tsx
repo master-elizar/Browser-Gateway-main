@@ -14,6 +14,7 @@ import {
   Input,
   PageHeader,
   Select,
+  Skeleton,
 } from "../components/ui";
 import { DataTable } from "../components/ui/DataTable";
 import { IconEmpty, IconPlus, IconUsers } from "../components/ui/icons";
@@ -30,15 +31,21 @@ export function AdminUsersPage() {
   const [displayName, setDisplayName] = useState("");
   const [role, setRole] = useState<Role>("USER");
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    if (!accessToken) return;
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
     try {
       const res = await api.listUsers(accessToken);
       setItems(res.items);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "error");
+    } finally {
+      setLoading(false);
     }
   }, [accessToken]);
 
@@ -157,6 +164,14 @@ export function AdminUsersPage() {
         </CardBody>
       </Card>
 
+      {loading ? (
+        <div className="ui-card space-y-3 p-5">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
+      ) : (
       <DataTable>
         <thead>
           <tr>
@@ -219,6 +234,7 @@ export function AdminUsersPage() {
           )}
         </tbody>
       </DataTable>
+      )}
     </div>
   );
 }
