@@ -123,25 +123,40 @@ def gateway_post(path: str, payload: dict) -> None:
         print(f"[agent] gateway post {path}: {exc}", flush=True)
 
 
-def cdp_ws_url() -> str | None:
-    # Prefer a page target; browser-level WS often 403 without allow-origins.
+def cdp_best_target() -> tuple[str, str] | None:
+    """(targetId, webSocketDebuggerUrl) for the current best CDP page target, or None.
+
+    The id lets callers detect when Chromium has swapped the attached target out from
+    under an already-open connection (e.g. a process swap on cross-origin navigation) --
+    see run_cdp_netmon, which reconnects when this changes instead of silently listening
+    to a target that no longer receives any events.
+    """
     try:
         with urllib.request.urlopen("http://127.0.0.1:9222/json/list", timeout=2) as resp:
             targets = json.loads(resp.read().decode())
         for t in targets:
             if t.get("type") == "page" and t.get("webSocketDebuggerUrl"):
-                return t["webSocketDebuggerUrl"]
+                return t.get("id") or "", t["webSocketDebuggerUrl"]
         for t in targets:
             if t.get("webSocketDebuggerUrl"):
-                return t["webSocketDebuggerUrl"]
+                return t.get("id") or "", t["webSocketDebuggerUrl"]
     except Exception:
         pass
     try:
         with urllib.request.urlopen("http://127.0.0.1:9222/json/version", timeout=2) as resp:
             info = json.loads(resp.read().decode())
-            return info.get("webSocketDebuggerUrl")
+            ws_url = info.get("webSocketDebuggerUrl")
+            if ws_url:
+                return "", ws_url
     except Exception:
-        return None
+        pass
+    return None
+
+
+def cdp_ws_url() -> str | None:
+    # Prefer a page target; browser-level WS often 403 without allow-origins.
+    target = cdp_best_target()
+    return target[1] if target else None
 
 
 def push_events(events: list[dict]) -> None:
@@ -366,10 +381,11 @@ def run_cdp_netmon() -> None:
         return True
 
     while True:
-        url = cdp_ws_url()
-        if not url:
+        target = cdp_best_target()
+        if not target:
             time.sleep(2)
             continue
+        target_id, url = target
         try:
             ws = websocket.create_connection(
                 url,
@@ -381,13 +397,32 @@ def run_cdp_netmon() -> None:
             ws.send(json.dumps({"id": next_id(), "method": "Page.enable", "params": {}}))
             ws.send(json.dumps({"id": next_id(), "method": "Runtime.enable", "params": {}}))
             ws.send(json.dumps({"id": next_id(), "method": "Page.reload", "params": {"ignoreCache": True}}))
-            print("[agent] CDP Network.enabled + reload", flush=True)
+            print(f"[agent] CDP Network.enabled + reload (target={target_id})", flush=True)
+            last_target_check = time.monotonic()
             while True:
                 flush_cdp_cmds(ws)
                 try:
                     raw = ws.recv()
                 except websocket.WebSocketTimeoutException:
                     flush_cdp_cmds(ws)
+                    # Chromium can swap the attached target out from under this connection
+                    # on certain navigations (process swap on cross-origin nav, etc.)
+                    # without ever erroring it -- recv() just keeps timing out forever with
+                    # nothing new to read. That's why this previously looked like "capture
+                    # works for the first page load, then silently stops for the rest of
+                    # the session" with zero errors anywhere. Periodically confirm the
+                    # target we're attached to is still the one Chromium considers current;
+                    # if not, reconnect onto whatever is current now.
+                    now = time.monotonic()
+                    if target_id and now - last_target_check > 3:
+                        last_target_check = now
+                        current = cdp_best_target()
+                        if current and current[0] != target_id:
+                            print(
+                                f"[agent] CDP target changed ({target_id} -> {current[0]}), reconnecting",
+                                flush=True,
+                            )
+                            break
                     continue
                 except Exception:
                     break
