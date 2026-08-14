@@ -150,11 +150,6 @@ export function HistoryDetailPage() {
           <ToolButton active={netOpen} onClick={() => setNetOpen((v) => !v)}>
             {t("viewer.network")}
           </ToolButton>
-          {sess?.pcapAvailable && (
-            <ToolButton onClick={() => void downloadPcap()} disabled={pcapBusy}>
-              {pcapBusy ? t("viewer.pcapDownloading") : t("viewer.pcapDownload")}
-            </ToolButton>
-          )}
           {user?.role === "SUPER_ADMIN" && (
             <Button variant="danger" disabled={busy} onClick={() => void onDelete()}>
               {t("history.delete")}
@@ -262,7 +257,15 @@ export function HistoryDetailPage() {
         </Card>
       )}
 
-      {netOpen && <SessionNetworkPanel events={events} readOnly />}
+      {netOpen && (
+        <SessionNetworkPanel
+          events={events}
+          readOnly
+          pcapAvailable={sess?.pcapAvailable}
+          pcapBusy={pcapBusy}
+          onDownloadPcap={() => void downloadPcap()}
+        />
+      )}
     </div>
   );
 }

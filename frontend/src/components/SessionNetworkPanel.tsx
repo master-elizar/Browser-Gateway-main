@@ -714,6 +714,11 @@ export type SessionNetworkPanelProps = {
   /** The session's configured event cap (see SessionViewerPage's eventCapFor) -- null means
    * unlimited, undefined means "not a live session" (history has no cap to show). */
   eventLimit?: number | null;
+  /** Set once the session's capture sidecar has flushed its first packets -- absent/false
+   * hides the button entirely rather than showing it disabled with no explanation. */
+  pcapAvailable?: boolean;
+  pcapBusy?: boolean;
+  onDownloadPcap?: () => void;
 };
 
 export function SessionNetworkPanel({
@@ -728,6 +733,9 @@ export function SessionNetworkPanel({
   onClearAll,
   onLookup,
   eventLimit,
+  pcapAvailable = false,
+  pcapBusy = false,
+  onDownloadPcap,
 }: SessionNetworkPanelProps) {
   const { t } = useTranslation();
   const [netTab, setNetTab] = useState<NetTab>("all");
@@ -815,6 +823,11 @@ export function SessionNetworkPanel({
               </span>
             )}
           </p>
+          {pcapAvailable && (
+            <Button variant="ghost" disabled={pcapBusy || !onDownloadPcap} onClick={() => onDownloadPcap?.()}>
+              {pcapBusy ? t("viewer.pcapDownloading") : t("viewer.pcapDownload")}
+            </Button>
+          )}
           <Button
             variant="ghost"
             disabled={readOnly || enrichBusy || events.length === 0 || !onEnrich}

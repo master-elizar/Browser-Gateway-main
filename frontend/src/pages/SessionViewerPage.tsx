@@ -623,11 +623,6 @@ export function SessionViewerPage() {
               {t("viewer.downloads")}
             </ToolButton>
           )}
-          {session?.pcapAvailable && (
-            <ToolButton onClick={() => void downloadPcap()} disabled={pcapBusy}>
-              {pcapBusy ? t("viewer.pcapDownloading") : t("viewer.pcapDownload")}
-            </ToolButton>
-          )}
           {features.viewerNetworkEnabled && (
             <ToolButton active={netOpen} onClick={() => setNetOpen((v) => !v)}>
               {t("viewer.network")}
@@ -828,6 +823,9 @@ export function SessionViewerPage() {
           onClearTab={(tab) => void clearNetwork("tab", tab)}
           onClearAll={() => void clearNetwork("all")}
           onLookup={(value, kind) => void lookupIndicator(value, kind)}
+          pcapAvailable={session?.pcapAvailable}
+          pcapBusy={pcapBusy}
+          onDownloadPcap={() => void downloadPcap()}
         />
       )}
 
