@@ -3,6 +3,7 @@ package ti
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/browser-gateway/backend/internal/domain"
@@ -29,6 +30,10 @@ const maxTaintDomains = 200
 // len(domains), capped by maxTaintDomains).
 func (s *Service) CheckDomainsAgainstOpenBlocklists(ctx context.Context, settings domain.AppSettings, domains []string) ([]string, int) {
 	if !settings.TiEnabled || len(domains) == 0 {
+		return nil, 0
+	}
+	domains = filterPlausibleDomains(domains)
+	if len(domains) == 0 {
 		return nil, 0
 	}
 	var providers []providerLookup
@@ -108,4 +113,24 @@ func (s *Service) CheckDomainsAgainstOpenBlocklists(ctx context.Context, setting
 	}
 	sort.Strings(flagged)
 	return flagged, len(domains)
+}
+
+// filterPlausibleDomains drops anything that doesn't look like a real domain before it can
+// reach a provider or a cache write. Unlike Lookup/LookupMany, the domains passed into
+// CheckDomainsAgainstOpenBlocklists come straight from session traffic extraction
+// (extractTaintDomains in sessions/service.go) and never pass through NormalizeKind -- so
+// the same validation has to be applied here explicitly, or a malformed extraction upstream
+// (e.g. a data: URI misparsed as a "domain") could reach a provider and a cache write
+// unfiltered, the same class of bug NormalizeKind guards against for the interactive lookup
+// paths. Filters in place (reuses domains' backing array) since the caller only reads the
+// result.
+func filterPlausibleDomains(domains []string) []string {
+	clean := domains[:0]
+	for _, d := range domains {
+		d = strings.ToLower(strings.TrimSpace(d))
+		if len(d) <= maxIndicatorLen && looksLikeDomain(d) {
+			clean = append(clean, d)
+		}
+	}
+	return clean
 }

@@ -50,10 +50,64 @@ func New(db *gorm.DB) *Service {
 	}
 }
 
+// maxIndicatorLen bounds how long a normalized indicator can be before this package will
+// even attempt to look it up. Every legitimate indicator here -- a domain (<=253 bytes), an
+// IP (<=45 bytes), a hash (32/40/64 hex chars), or a realistic URL someone actually wants
+// checked -- comfortably fits well under this. It exists specifically to catch non-indicator
+// garbage (a data: URI, a pasted image, a stray base64 blob) before it can reach a provider
+// or a cache write: PostgreSQL's btree index has a hard ~2704-byte per-row limit, and
+// saveCache's (provider, kind, indicator) unique index fails outright for any single
+// indicator anywhere near that size.
+const maxIndicatorLen = 1024
+
+// nonIndicatorSchemePrefixes are URI schemes that can never be a meaningful domain/ip/url/
+// hash indicator -- rejected outright before any kind-specific parsing. data: is the
+// concretely observed case (an inline favicon/image reaching the check pipeline as if it
+// were a URL), the rest are the same class of "not something any provider here checks".
+var nonIndicatorSchemePrefixes = []string{"data:", "blob:", "javascript:", "about:", "chrome:", "file:"}
+
+func hasNonIndicatorScheme(v string) bool {
+	lower := strings.ToLower(v)
+	for _, scheme := range nonIndicatorSchemePrefixes {
+		if strings.HasPrefix(lower, scheme) {
+			return true
+		}
+	}
+	return false
+}
+
+// looksLikeDomain is a permissive but real shape check -- letters/digits/dot/hyphen only,
+// within DNS's own length limit. v is assumed already lowercased. It exists as a safety net
+// for the case where hostname extraction below silently fails (e.g. url.Parse errors on a
+// malformed "http://"+v reparse) and would otherwise leave the original raw, unvalidated
+// input in place as if it were a clean domain.
+func looksLikeDomain(v string) bool {
+	if v == "" || len(v) > 253 {
+		return false
+	}
+	for _, r := range v {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '.', r == '-':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func NormalizeKind(kind, value string) (Kind, string, error) {
 	v := strings.TrimSpace(value)
 	if v == "" {
 		return "", "", fmt.Errorf("%w: empty value", ErrUnsupported)
+	}
+	// Applies uniformly to every kind (explicit or auto-detected) so a mis-classified or
+	// deliberately-wrong kind can't bypass it -- this is the single common validation point
+	// for all of Lookup/LookupMany/TICheck, whatever kind ends up selected below.
+	if len(v) > maxIndicatorLen {
+		return "", "", fmt.Errorf("%w: value is %d bytes, max %d", ErrInvalidIndicator, len(v), maxIndicatorLen)
+	}
+	if hasNonIndicatorScheme(v) {
+		return "", "", fmt.Errorf("%w: not a checkable value", ErrInvalidIndicator)
 	}
 	k := Kind(strings.ToLower(strings.TrimSpace(kind)))
 	switch k {
@@ -80,12 +134,25 @@ func NormalizeKind(kind, value string) (Kind, string, error) {
 		if h, err := url.Parse("http://" + v); err == nil && h.Hostname() != "" {
 			v = h.Hostname()
 		}
+		// Explicit kind="domain" skips the auto-detect classification above, and the
+		// hostname-extraction just above silently no-ops (leaving v as whatever was
+		// passed in) whenever "http://"+v fails to reparse -- this is the actual guard
+		// that catches that case rather than accepting non-domain-shaped input.
+		if !looksLikeDomain(v) {
+			return "", "", fmt.Errorf("%w: %q is not a valid domain", ErrInvalidIndicator, truncate(v, 60))
+		}
 	}
 	if k == KindIP {
 		v = strings.Trim(v, "[]")
+		if net.ParseIP(v) == nil {
+			return "", "", fmt.Errorf("%w: %q is not a valid IP", ErrInvalidIndicator, truncate(v, 60))
+		}
 	}
 	if k == KindHash {
 		v = strings.ToLower(v)
+		if !isHexHash(v) {
+			return "", "", fmt.Errorf("%w: %q is not a valid MD5/SHA1/SHA256 hash", ErrInvalidIndicator, truncate(v, 60))
+		}
 	}
 	return k, v, nil
 }
@@ -411,6 +478,12 @@ func (s *Service) fromCache(provider, kind, indicator string) (*Result, bool) {
 
 func (s *Service) saveCache(r *Result) {
 	if r == nil || r.Provider == "multi" || r.Error != "" {
+		return
+	}
+	// Last-resort guard, independent of NormalizeKind's own validation -- an indicator this
+	// long can never legitimately reach here, and PostgreSQL's btree index has a hard
+	// per-row size limit that would otherwise fail this INSERT outright.
+	if len(r.Indicator) > maxIndicatorLen {
 		return
 	}
 	now := time.Now().UTC()

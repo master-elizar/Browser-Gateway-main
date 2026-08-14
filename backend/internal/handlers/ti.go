@@ -224,6 +224,8 @@ func mapTIErr(err error) error {
 		return fiber.NewError(fiber.StatusTooManyRequests, err.Error())
 	case strings.Contains(err.Error(), ti.ErrUnsupported.Error()):
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	case strings.Contains(err.Error(), ti.ErrInvalidIndicator.Error()):
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	default:
 		return fiber.NewError(fiber.StatusBadGateway, err.Error())
 	}

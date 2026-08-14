@@ -13,6 +13,10 @@ var (
 	ErrUnsupported = errors.New("unsupported indicator kind")
 	ErrRateLimited = errors.New("threat intelligence rate limited")
 	ErrSkip        = errors.New("provider skipped for this indicator")
+	// ErrInvalidIndicator means the value isn't a plausible domain/ip/url/hash at all --
+	// e.g. a data: URI, or something absurdly long -- rejected before it can reach a
+	// provider or a cache write. See NormalizeKind.
+	ErrInvalidIndicator = errors.New("value is not a checkable domain/ip/url/hash")
 )
 
 type Kind string

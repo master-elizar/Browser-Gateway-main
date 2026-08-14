@@ -8,8 +8,22 @@ export type NetTab = "all" | "dns" | "http" | "url" | "fqdn" | "ip" | "ti" | "tr
 export type NetSort = "time_desc" | "time_asc" | "host_asc" | "host_desc" | "status_asc" | "status_desc" | "method_asc" | "url_asc";
 export type StatusFilter = "all" | "2xx" | "3xx" | "4xx" | "5xx" | "error" | "dns_only";
 
+// nonIndicatorSchemes catches request URLs that can never be a meaningful check target --
+// most notably data: URIs (inline favicons/images), which browsers can legitimately report
+// as a network event's "url". Without this, hostOf's no-"://" fallback below would split a
+// data:image/png;base64,... string on "/" and return "data:image" as if it were a real host,
+// and the "url"-tab branches further down would send the whole multi-KB string to the TI
+// check endpoint outright (the actual cause of a production incident: a data: URI reached
+// the backend as an indicator and blew past PostgreSQL's index row-size limit).
+const NON_INDICATOR_SCHEMES = ["data:", "blob:", "javascript:", "about:", "chrome:", "file:"];
+
+function isNonIndicatorScheme(v: string): boolean {
+  const lower = v.toLowerCase();
+  return NON_INDICATOR_SCHEMES.some((scheme) => lower.startsWith(scheme));
+}
+
 function hostOf(urlOrHost?: string): string {
-  if (!urlOrHost) return "";
+  if (!urlOrHost || isNonIndicatorScheme(urlOrHost)) return "";
   try {
     if (urlOrHost.includes("://")) return new URL(urlOrHost).hostname;
   } catch {
@@ -46,7 +60,7 @@ function primaryIndicator(
     return null;
   }
   if (tab === "url") {
-    if (ev.url) return { value: ev.url, kind: "url" };
+    if (ev.url && !isNonIndicatorScheme(ev.url)) return { value: ev.url, kind: "url" };
     const h = hostOf(ev.query);
     return h ? { value: h, kind: isIP(h) ? "ip" : "domain" } : null;
   }
@@ -58,7 +72,7 @@ function primaryIndicator(
   // all / http / netflow — prefer host, fall back to URL
   const host = hostOf(ev.url || ev.query);
   if (host) return { value: host, kind: isIP(host) ? "ip" : "domain" };
-  if (ev.url) return { value: ev.url, kind: "url" };
+  if (ev.url && !isNonIndicatorScheme(ev.url)) return { value: ev.url, kind: "url" };
   if (ev.query) return { value: ev.query, kind: isIP(ev.query) ? "ip" : "domain" };
   return null;
 }
