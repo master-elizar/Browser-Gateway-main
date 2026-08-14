@@ -12,7 +12,8 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { WebRTCViewer } from "../components/WebRTCViewer";
 import { SessionNetworkPanel, type NetTab } from "../components/SessionNetworkPanel";
-import { ToolButton } from "../components/ui";
+import { Alert, Button, Card, CardBody, CardHeader, EmptyState, Input, Skeleton, ToolButton } from "../components/ui";
+import { IconClose } from "../components/ui/icons";
 import { usePolling } from "../hooks/usePolling";
 import { backoffMs } from "../lib/reconnect";
 
@@ -496,6 +497,10 @@ export function SessionViewerPage() {
     }
   }
 
+  if (!session && !error) {
+    return <Skeleton className="h-96" />;
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="ui-card flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -558,13 +563,9 @@ export function SessionViewerPage() {
               {t("viewer.network")}
             </ToolButton>
           )}
-          <button
-            type="button"
-            onClick={() => void stop()}
-            className="rounded-lg border border-[var(--color-danger)]/50 px-3 py-1.5 text-sm text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10"
-          >
+          <Button variant="danger" onClick={() => void stop()}>
             {t("viewer.stop")}
-          </button>
+          </Button>
           {features.viewerUploadEnabled && (
             <input
               ref={fileRef}
@@ -576,24 +577,10 @@ export function SessionViewerPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]">
-          {error}
-        </div>
-      )}
-      {note && (
-        <div className="rounded-lg border border-[var(--color-signal)]/40 bg-[var(--color-signal)]/10 px-4 py-3 text-sm text-[var(--color-signal-2)]">
-          {note}
-        </div>
-      )}
+      {error && <Alert tone="danger">{error}</Alert>}
+      {note && <Alert tone="info">{note}</Alert>}
       {session?.status === "DESTROYED" && session?.netTaintChecked && (session.netTaintTotal ?? 0) > 0 && (
-        <div
-          className={
-            (session.netTaintFlagged ?? 0) > 0
-              ? "rounded-lg border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-4 py-3 text-sm text-[var(--color-danger)]"
-              : "rounded-lg border border-[var(--color-success)]/40 bg-[var(--color-success)]/10 px-4 py-3 text-sm text-[var(--color-success)]"
-          }
-        >
+        <Alert tone={(session.netTaintFlagged ?? 0) > 0 ? "danger" : "success"}>
           {(session.netTaintFlagged ?? 0) > 0
             ? t("viewer.netTaintFlagged", {
                 flagged: session.netTaintFlagged,
@@ -601,36 +588,40 @@ export function SessionViewerPage() {
                 domains: (session.netTaintDomains || []).join(", "),
               })
             : t("viewer.netTaintClean", { total: session.netTaintTotal })}
-        </div>
+        </Alert>
       )}
 
       {features.viewerDownloadsEnabled && showDownloads && (
-        <div className="ui-card p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="section-title">{t("viewer.downloads")}</h2>
-            <button type="button" className="text-xs text-[var(--color-fog)]" onClick={() => setShowDownloads(false)}>
-              {t("common.close")}
-            </button>
-          </div>
-          {downloads.length === 0 ? (
-            <p className="text-sm text-[var(--color-fog)]">{t("viewer.downloadsEmpty")}</p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {downloads.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3">
-                  <span className="truncate font-mono text-xs">{d.name}</span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-[var(--color-signal-2)] hover:underline"
-                    onClick={() => void openDownloadPicker(d)}
-                  >
-                    {t("viewer.download")}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <Card>
+          <CardHeader
+            title={t("viewer.downloads")}
+            action={
+              <Button variant="icon" onClick={() => setShowDownloads(false)} title={t("common.close")}>
+                <IconClose size={14} />
+              </Button>
+            }
+          />
+          <CardBody>
+            {downloads.length === 0 ? (
+              <EmptyState title={t("viewer.downloadsEmpty")} />
+            ) : (
+              <ul className="space-y-2 text-sm">
+                {downloads.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between gap-3">
+                    <span className="truncate font-mono text-xs">{d.name}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-[var(--color-signal-2)] hover:underline"
+                      onClick={() => void openDownloadPicker(d)}
+                    >
+                      {t("viewer.download")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
       )}
 
       {dlPick && (
@@ -667,9 +658,8 @@ export function SessionViewerPage() {
                 <label className="mb-1 block text-xs text-[var(--color-fog)]">
                   {t("viewer.downloadZipPassword")}
                 </label>
-                <input
+                <Input
                   type="password"
-                  className="input-field w-full"
                   value={dlPassword}
                   placeholder={zipDefaultSet ? "••••••••" : ""}
                   onChange={(e) => setDlPassword(e.target.value)}
@@ -678,22 +668,15 @@ export function SessionViewerPage() {
               </div>
             )}
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                className="rounded border border-[var(--color-line)] px-3 py-1.5 text-sm"
-                disabled={dlBusy}
-                onClick={() => setDlPick(null)}
-              >
+              <Button variant="ghost" disabled={dlBusy} onClick={() => setDlPick(null)}>
                 {t("viewer.downloadCancel")}
-              </button>
-              <button
-                type="button"
-                className="rounded bg-[var(--color-signal)] px-3 py-1.5 text-sm text-black disabled:opacity-50"
+              </Button>
+              <Button
                 disabled={dlBusy || (dlFormat === "zip" && !dlPassword && !zipDefaultSet)}
                 onClick={() => void confirmDownload()}
               >
                 {t("viewer.downloadConfirm")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -710,12 +693,7 @@ export function SessionViewerPage() {
       >
         {session?.status === "RUNNING" || session?.status === "IDLE" ? (
           !streamAvailable || !effectiveStream ? (
-            <div className="grid h-full place-items-center p-6 text-center">
-              <div>
-                <div className="text-lg text-[var(--color-snow)]">{t("viewer.streamDisabled")}</div>
-                <p className="mt-2 text-sm text-[var(--color-fog)]">{t("viewer.streamDisabledHint")}</p>
-              </div>
-            </div>
+            <StreamPlaceholder title={t("viewer.streamDisabled")} subtitle={t("viewer.streamDisabledHint")} />
           ) : effectiveStream === "webrtc" && accessToken && id ? (
             <WebRTCViewer
               sessionId={id}
@@ -732,20 +710,10 @@ export function SessionViewerPage() {
               allow="clipboard-read; clipboard-write"
             />
           ) : (
-            <div className="grid h-full place-items-center p-6 text-center">
-              <div>
-                <div className="text-lg text-[var(--color-snow)]">{t("viewer.waitingContainer")}</div>
-                <p className="mt-2 font-mono text-xs text-[var(--color-fog)]">{session?.status || "…"}</p>
-              </div>
-            </div>
+            <StreamPlaceholder title={t("viewer.waitingContainer")} subtitle={session?.status || "…"} mono />
           )
         ) : (
-          <div className="grid h-full place-items-center p-6 text-center">
-            <div>
-              <div className="text-lg text-[var(--color-snow)]">{t("viewer.waitingContainer")}</div>
-              <p className="mt-2 font-mono text-xs text-[var(--color-fog)]">{session?.status || "…"}</p>
-            </div>
-          </div>
+          <StreamPlaceholder title={t("viewer.waitingContainer")} subtitle={session?.status || "…"} mono />
         )}
         {effectiveFit === "stretch" && features.viewerStretchEnabled && (
           <div
@@ -793,6 +761,19 @@ export function SessionViewerPage() {
         />
       )}
 
+    </div>
+  );
+}
+
+function StreamPlaceholder({ title, subtitle, mono }: { title: string; subtitle?: string; mono?: boolean }) {
+  return (
+    <div className="grid h-full place-items-center p-6 text-center">
+      <div>
+        <div className="text-lg text-[var(--color-snow)]">{title}</div>
+        {subtitle && (
+          <p className={`mt-2 text-sm text-[var(--color-fog)] ${mono ? "font-mono text-xs" : ""}`}>{subtitle}</p>
+        )}
+      </div>
     </div>
   );
 }
