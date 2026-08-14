@@ -127,6 +127,7 @@ func (h *Handler) serveVNCProxy(w http.ResponseWriter, r *http.Request, user *do
 			return
 		}
 		lastTouch = now
+		log.Printf("vnc: touch activity session=%s", sessionID)
 		h.sessions.TouchActivity(sessionID)
 	}
 

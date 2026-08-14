@@ -2,6 +2,7 @@ package netmon
 
 import (
 	"encoding/json"
+	"log"
 	"sync"
 )
 
@@ -23,6 +24,7 @@ func (h *Hub) Subscribe(sessionID string) chan []byte {
 		h.subs[sessionID] = make(map[chan []byte]struct{})
 	}
 	h.subs[sessionID][ch] = struct{}{}
+	log.Printf("netmon: subscribed session=%s subscribers=%d", sessionID, len(h.subs[sessionID]))
 	return ch
 }
 
@@ -31,6 +33,7 @@ func (h *Hub) Unsubscribe(sessionID string, ch chan []byte) {
 	defer h.mu.Unlock()
 	if m := h.subs[sessionID]; m != nil {
 		delete(m, ch)
+		log.Printf("netmon: unsubscribed session=%s subscribers=%d", sessionID, len(m))
 		if len(m) == 0 {
 			delete(h.subs, sessionID)
 		}
@@ -49,7 +52,9 @@ func (h *Hub) Publish(sessionID string, event any) {
 		select {
 		case ch <- data:
 		default:
-			// drop if slow consumer
+			// Previously silent -- log it, so a stalled-reader theory is confirmable
+			// instead of guessed at from the next live repro.
+			log.Printf("netmon: dropped event for session=%s -- subscriber buffer full (slow/stalled reader)", sessionID)
 		}
 	}
 }
