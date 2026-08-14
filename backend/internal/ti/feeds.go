@@ -45,10 +45,16 @@ const (
 // when set, is fetched as a second plain list whose entries match as suffixes (apex + all
 // subdomains) rather than exact hostnames -- used by Phishing.Database's wildcard file.
 type feedDef struct {
-	ID          string
-	Name        string
-	Kind        Kind
-	URL         string
+	ID   string
+	Name string
+	Kind Kind
+	URL  string
+	// ExtraURLs are additional sources of the same Format merged into this feed's single
+	// exact-match set -- used when one logical source (e.g. blocklistproject's several
+	// category files) ships as multiple separate downloads. They must stay merged into one
+	// feed rather than registered as separate feedDefs, or a single logical source would
+	// count as several entries in the malicious/total-sources aggregation ratio.
+	ExtraURLs   []string
 	WildcardURL string
 	Format      feedFormat
 	TTL         time.Duration
@@ -144,6 +150,41 @@ func builtinFeedDefs() []feedDef {
 			Permalink: "https://www.spamhaus.org/drop/",
 			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedSpamhausDropEnabled },
 		},
+		{
+			ID:        "feed_openphish",
+			Name:      "OpenPhish community feed",
+			Kind:      KindDomain,
+			URL:       "https://openphish.com/feed.txt",
+			Format:    feedFormatURLHost,
+			TTL:       time.Hour,
+			Permalink: "https://openphish.com/",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedOpenPhishEnabled },
+		},
+		{
+			ID:   "feed_blocklistproject",
+			Name: "The Block List Project (malware/phishing/ransomware/scam)",
+			Kind: KindDomain,
+			URL:  "https://raw.githubusercontent.com/blocklistproject/Lists/master/malware.txt",
+			ExtraURLs: []string{
+				"https://raw.githubusercontent.com/blocklistproject/Lists/master/phishing.txt",
+				"https://raw.githubusercontent.com/blocklistproject/Lists/master/ransomware.txt",
+				"https://raw.githubusercontent.com/blocklistproject/Lists/master/scam.txt",
+			},
+			Format:    feedFormatHostsFile,
+			TTL:       6 * time.Hour,
+			Permalink: "https://github.com/blocklistproject/Lists",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedBlocklistProjectEnabled },
+		},
+		{
+			ID:        "feed_hagezi",
+			Name:      "HaGeZi DNS Blocklist (Pro)",
+			Kind:      KindDomain,
+			URL:       "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/pro.txt",
+			Format:    feedFormatPlainList,
+			TTL:       6 * time.Hour,
+			Permalink: "https://github.com/hagezi/dns-blocklists",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedHaGeziEnabled },
+		},
 	}
 }
 
@@ -216,6 +257,15 @@ func (fm *FeedManager) refreshOne(d feedDef, lf *loadedFeed) {
 			lf.lastErr = err
 			lf.mu.Unlock()
 			return
+		}
+		for _, extraURL := range d.ExtraURLs {
+			more, err := fm.fetchDomainList(extraURL, d.Format)
+			if err != nil {
+				continue // one category source being briefly down shouldn't drop the rest
+			}
+			for h := range more {
+				exact[h] = struct{}{}
+			}
 		}
 		var wildcard []string
 		if d.WildcardURL != "" {
