@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { api, type HistoryDetail } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Skeleton } from "../components/ui";
+import { Badge, Skeleton, ToolButton } from "../components/ui";
 import {
   SessionNetworkPanel,
   normalizeHistoryNetworkEvents,
@@ -126,9 +126,9 @@ export function HistoryDetailPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <ToolBtn active={netOpen} onClick={() => setNetOpen((v) => !v)}>
+          <ToolButton active={netOpen} onClick={() => setNetOpen((v) => !v)}>
             {t("viewer.network")}
-          </ToolBtn>
+          </ToolButton>
           {user?.role === "SUPER_ADMIN" && (
             <button
               type="button"
@@ -210,8 +210,8 @@ export function HistoryDetailPage() {
               {t("history.filmstrip")}
             </h2>
             <div className="flex gap-1">
-              <ToolBtn onClick={() => selectFrame(selectedIdx - 1)}>{t("history.prev")}</ToolBtn>
-              <ToolBtn onClick={() => selectFrame(selectedIdx + 1)}>{t("history.next")}</ToolBtn>
+              <ToolButton onClick={() => selectFrame(selectedIdx - 1)}>{t("history.prev")}</ToolButton>
+              <ToolButton onClick={() => selectFrame(selectedIdx + 1)}>{t("history.next")}</ToolButton>
             </div>
           </div>
           <div
@@ -256,31 +256,6 @@ export function HistoryDetailPage() {
 
       {netOpen && <SessionNetworkPanel events={events} readOnly />}
     </div>
-  );
-}
-
-function ToolBtn({
-  children,
-  active,
-  onClick,
-}: {
-  children: ReactNode;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "rounded-[var(--radius-md)] border px-3 py-1.5 text-sm transition",
-        active
-          ? "border-[var(--color-signal)]/60 bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] shadow-[var(--shadow-sm)]"
-          : "border-[var(--color-line)] bg-[var(--color-panel)]/40 text-[var(--color-fog)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-snow)]",
-      ].join(" ")}
-    >
-      {children}
-    </button>
   );
 }
 

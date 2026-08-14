@@ -94,6 +94,42 @@ export function Segmented<T extends string>({
   );
 }
 
+// A standalone pressed/unpressed button (e.g. a view-mode switch rendered as several
+// independent buttons rather than one connected group) -- for a connected set of mutually
+// exclusive options, prefer Segmented above instead.
+export function ToolButton({
+  children,
+  active,
+  disabled,
+  title,
+  onClick,
+}: {
+  children: ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  title?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      title={title}
+      onClick={disabled ? undefined : onClick}
+      className={[
+        "rounded-[var(--radius-md)] border px-3 py-1.5 text-sm transition",
+        disabled
+          ? "cursor-not-allowed border-[var(--color-line)] bg-[var(--color-panel)]/20 text-[var(--color-muted)] opacity-60"
+          : active
+            ? "border-[var(--color-signal)]/60 bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] shadow-[var(--shadow-sm)]"
+            : "border-[var(--color-line)] bg-[var(--color-panel)]/40 text-[var(--color-fog)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-snow)]",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Toggle({
   checked,
   onChange,

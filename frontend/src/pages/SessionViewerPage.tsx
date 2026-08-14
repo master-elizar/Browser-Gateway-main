@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,6 +12,7 @@ import {
 import { useAuth } from "../auth/AuthContext";
 import { WebRTCViewer } from "../components/WebRTCViewer";
 import { SessionNetworkPanel, type NetTab } from "../components/SessionNetworkPanel";
+import { ToolButton } from "../components/ui";
 import { usePolling } from "../hooks/usePolling";
 import { backoffMs } from "../lib/reconnect";
 
@@ -515,47 +516,47 @@ export function SessionViewerPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <ToolBtn
+          <ToolButton
             active={effectiveStream === "webrtc"}
             disabled={!WEBRTC_VIEWER_ENABLED}
             title={WEBRTC_VIEWER_ENABLED ? undefined : t("viewer.webrtcComingSoon")}
             onClick={() => WEBRTC_VIEWER_ENABLED && setStreamMode("webrtc")}
           >
             WebRTC
-          </ToolBtn>
+          </ToolButton>
           {features.viewerNovncEnabled && (
-            <ToolBtn active={effectiveStream === "novnc"} onClick={() => setStreamMode("novnc")}>
+            <ToolButton active={effectiveStream === "novnc"} onClick={() => setStreamMode("novnc")}>
               noVNC
-            </ToolBtn>
+            </ToolButton>
           )}
           {features.viewerFitEnabled && (
-            <ToolBtn active={effectiveFit === "fit"} onClick={() => setFitMode("fit")}>
+            <ToolButton active={effectiveFit === "fit"} onClick={() => setFitMode("fit")}>
               {t("viewer.fit")}
-            </ToolBtn>
+            </ToolButton>
           )}
           {features.viewerStretchEnabled && (
-            <ToolBtn active={effectiveFit === "stretch"} onClick={() => setFitMode("stretch")}>
+            <ToolButton active={effectiveFit === "stretch"} onClick={() => setFitMode("stretch")}>
               {t("viewer.stretch")}
-            </ToolBtn>
+            </ToolButton>
           )}
           {features.viewerClipboardEnabled && (
             <>
-              <ToolBtn onClick={() => void copyToRemote()}>{t("viewer.clipboardTo")}</ToolBtn>
-              <ToolBtn onClick={() => void copyFromRemote()}>{t("viewer.clipboardFrom")}</ToolBtn>
+              <ToolButton onClick={() => void copyToRemote()}>{t("viewer.clipboardTo")}</ToolButton>
+              <ToolButton onClick={() => void copyFromRemote()}>{t("viewer.clipboardFrom")}</ToolButton>
             </>
           )}
           {features.viewerUploadEnabled && (
-            <ToolBtn onClick={() => fileRef.current?.click()}>{t("viewer.upload")}</ToolBtn>
+            <ToolButton onClick={() => fileRef.current?.click()}>{t("viewer.upload")}</ToolButton>
           )}
           {features.viewerDownloadsEnabled && (
-            <ToolBtn active={showDownloads} onClick={() => void openDownloads()}>
+            <ToolButton active={showDownloads} onClick={() => void openDownloads()}>
               {t("viewer.downloads")}
-            </ToolBtn>
+            </ToolButton>
           )}
           {features.viewerNetworkEnabled && (
-            <ToolBtn active={netOpen} onClick={() => setNetOpen((v) => !v)}>
+            <ToolButton active={netOpen} onClick={() => setNetOpen((v) => !v)}>
               {t("viewer.network")}
-            </ToolBtn>
+            </ToolButton>
           )}
           <button
             type="button"
@@ -668,7 +669,7 @@ export function SessionViewerPage() {
                 </label>
                 <input
                   type="password"
-                  className="ui-input w-full"
+                  className="input-field w-full"
                   value={dlPassword}
                   placeholder={zipDefaultSet ? "••••••••" : ""}
                   onChange={(e) => setDlPassword(e.target.value)}
@@ -792,38 +793,5 @@ export function SessionViewerPage() {
       )}
 
     </div>
-  );
-}
-
-function ToolBtn({
-  children,
-  active,
-  disabled,
-  title,
-  onClick,
-}: {
-  children: ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-  title?: string;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      title={title}
-      onClick={disabled ? undefined : onClick}
-      className={[
-        "rounded-[var(--radius-md)] border px-3 py-1.5 text-sm transition",
-        disabled
-          ? "cursor-not-allowed border-[var(--color-line)] bg-[var(--color-panel)]/20 text-[var(--color-muted)] opacity-60"
-          : active
-            ? "border-[var(--color-signal)]/60 bg-[var(--color-signal-dim)] text-[var(--color-signal-2)] shadow-[var(--shadow-sm)]"
-            : "border-[var(--color-line)] bg-[var(--color-panel)]/40 text-[var(--color-fog)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-snow)]",
-      ].join(" ")}
-    >
-      {children}
-    </button>
   );
 }
