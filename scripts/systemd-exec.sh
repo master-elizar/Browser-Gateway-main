@@ -25,7 +25,7 @@ case "$cmd" in
     ;;
   build)
     "${COMPOSE[@]}" build
-    "${COMPOSE[@]}" --profile build-only build browser-engine browser-engine-firefox
+    "${COMPOSE[@]}" --profile build-only build browser-engine browser-engine-firefox pcap-agent
     ;;
   *)
     echo "usage: $0 start|stop|reload|build" >&2

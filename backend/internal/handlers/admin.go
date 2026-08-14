@@ -131,6 +131,13 @@ func (h *Handler) AdminPutSettings(c *fiber.Ctx) error {
 	s.TiFeedETCompromisedEnabled = incoming.TiFeedETCompromisedEnabled
 	s.TiFeedGreenSnowEnabled = incoming.TiFeedGreenSnowEnabled
 	s.TiCIRCLHashlookupEnabled = incoming.TiCIRCLHashlookupEnabled
+	s.PcapEnabled = incoming.PcapEnabled
+	if incoming.PcapMaxMB > 0 {
+		s.PcapMaxMB = incoming.PcapMaxMB
+	}
+	if s.PcapUIVersion < 1 {
+		s.PcapUIVersion = 1
+	}
 	if s.FeedsUIVersion < 1 {
 		s.FeedsUIVersion = 1
 	}

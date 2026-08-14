@@ -94,6 +94,7 @@ export function SessionViewerPage() {
   const [dlFormat, setDlFormat] = useState<"file" | "zip">("file");
   const [dlPassword, setDlPassword] = useState("");
   const [dlBusy, setDlBusy] = useState(false);
+  const [pcapBusy, setPcapBusy] = useState(false);
   const [zipDefaultSet, setZipDefaultSet] = useState(false);
   const [fitMode, setFitMode] = useState<FitMode>("fit");
   const [streamMode, setStreamMode] = useState<StreamMode>("novnc");
@@ -418,6 +419,26 @@ export function SessionViewerPage() {
     }
   }
 
+  async function downloadPcap() {
+    if (!accessToken || !id) return;
+    setPcapBusy(true);
+    try {
+      const res = await fetch(api.pcapUrl(id), { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${id}.pcap`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "pcap download error");
+    } finally {
+      setPcapBusy(false);
+    }
+  }
+
   async function clearNetwork(scope: "tab" | "all", tab: NetTab = "all") {
     if (!accessToken || !id) return;
     setClearBusy(true);
@@ -600,6 +621,11 @@ export function SessionViewerPage() {
           {features.viewerDownloadsEnabled && (
             <ToolButton active={showDownloads} onClick={() => void openDownloads()}>
               {t("viewer.downloads")}
+            </ToolButton>
+          )}
+          {session?.pcapAvailable && (
+            <ToolButton onClick={() => void downloadPcap()} disabled={pcapBusy}>
+              {pcapBusy ? t("viewer.pcapDownloading") : t("viewer.pcapDownload")}
             </ToolButton>
           )}
           {features.viewerNetworkEnabled && (

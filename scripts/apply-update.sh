@@ -63,7 +63,7 @@ set_progress 45 build "Building stack images"
 docker compose --env-file .env build
 
 set_progress 70 engines "Building Chromium and Firefox engines"
-docker compose --env-file .env --profile build-only build browser-engine browser-engine-firefox
+docker compose --env-file .env --profile build-only build browser-engine browser-engine-firefox pcap-agent
 
 # Only mark the tip as installed after images build successfully — otherwise the
 # Admin UI thinks we are current while containers still run the previous release.

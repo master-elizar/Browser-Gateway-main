@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -74,6 +76,10 @@ type SessionView struct {
 	NetTaintTotal   int      `json:"netTaintTotal,omitempty"`
 	NetTaintFlagged int      `json:"netTaintFlagged,omitempty"`
 	NetTaintDomains []string `json:"netTaintDomains,omitempty"`
+	// PcapAvailable/PcapSizeBytes reflect the capture file on disk right now -- true/nonzero
+	// as soon as the sidecar has flushed its first packets, well before the session stops.
+	PcapAvailable bool                 `json:"pcapAvailable"`
+	PcapSizeBytes int64                `json:"pcapSizeBytes,omitempty"`
 	DurationSec  int64                `json:"durationSec,omitempty"`
 	SignalingURL string               `json:"signalingUrl,omitempty"`
 	NetmonURL    string               `json:"netmonUrl,omitempty"`
@@ -220,6 +226,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*SessionView, err
 	go s.boot(row.ID)
 
 	v := toView(row)
+	s.enrichPcap(&v)
 	return &v, nil
 }
 
@@ -306,6 +313,17 @@ func (s *Service) boot(sessionID string) {
 		"status":       domain.StatusStarting,
 	}).Error
 
+	if st.PcapEnabled {
+		// Best-effort: a capture failure (missing image, Docker API hiccup) must not take
+		// the session down -- pcap is a bonus artifact, not core functionality.
+		if pcapID, perr := s.orch.CreatePcapSidecar(ctx, row.ID, res.ContainerID); perr != nil {
+			log.Printf("session %s pcap sidecar: %v", row.ID, perr)
+		} else {
+			_ = s.db.Model(&domain.BrowserSession{}).Where("id = ?", row.ID).
+				Update("pcap_container_id", pcapID).Error
+		}
+	}
+
 	if err := s.orch.WaitHealthy(ctx, res.ContainerID, 120*time.Second); err != nil {
 		_ = s.orch.Destroy(context.Background(), res.ContainerID)
 		s.fail(row.ID, "boot health timeout: "+err.Error())
@@ -348,7 +366,36 @@ func (s *Service) Get(user *domain.User, id string) (*SessionView, error) {
 		return nil, ErrForbidden
 	}
 	v := toView(row)
+	s.enrichPcap(&v)
 	return &v, nil
+}
+
+// PcapFilePath returns the on-disk path of a session's capture file, after the same
+// ownership check as Get -- used by the download handler so it never has to duplicate that
+// authorization logic. Returns an error if the session doesn't exist/isn't owned by user, or
+// if no capture file exists yet (never started, still starting, or capture was disabled).
+func (s *Service) PcapFilePath(user *domain.User, id string) (string, error) {
+	v, err := s.Get(user, id)
+	if err != nil {
+		return "", err
+	}
+	if !v.PcapAvailable {
+		return "", ErrNotFound
+	}
+	return filepath.Join(s.orch.PcapDir(), id+".pcap"), nil
+}
+
+// enrichPcap stats the capture file on disk -- PcapAvailable/PcapSizeBytes reflect whatever
+// has been flushed so far, which is why this is a live stat rather than a stored DB column
+// (the file keeps growing for the whole session, well past whenever it was last written to
+// the row).
+func (s *Service) enrichPcap(v *SessionView) {
+	info, err := os.Stat(filepath.Join(s.orch.PcapDir(), v.ID+".pcap"))
+	if err != nil || info.IsDir() || info.Size() == 0 {
+		return
+	}
+	v.PcapAvailable = true
+	v.PcapSizeBytes = info.Size()
 }
 
 func (s *Service) List(user *domain.User, all bool) ([]SessionView, error) {
@@ -363,7 +410,9 @@ func (s *Service) List(user *domain.User, all bool) ([]SessionView, error) {
 	}
 	out := make([]SessionView, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, toView(r))
+		v := toView(r)
+		s.enrichPcap(&v)
+		out = append(out, v)
 	}
 	return out, nil
 }
@@ -381,6 +430,7 @@ func (s *Service) Stop(ctx context.Context, user *domain.User, id string) (*Sess
 	}
 	if row.Status == domain.StatusDestroyed || row.Status == domain.StatusStopping {
 		v := toView(row)
+		s.enrichPcap(&v)
 		return &v, nil
 	}
 
@@ -390,6 +440,13 @@ func (s *Service) Stop(ctx context.Context, user *domain.User, id string) (*Sess
 	if row.ContainerID != "" {
 		if err := s.orch.Destroy(ctx, row.ContainerID); err != nil {
 			log.Printf("destroy %s: %v", row.ContainerID, err)
+		}
+	}
+	if row.PcapContainerID != "" {
+		// The capture file itself lives on the shared data volume, not inside this
+		// container, so destroying it (stopping capture) doesn't lose what was recorded.
+		if err := s.orch.Destroy(ctx, row.PcapContainerID); err != nil {
+			log.Printf("destroy pcap sidecar %s: %v", row.PcapContainerID, err)
 		}
 	}
 	now := time.Now()
@@ -402,6 +459,7 @@ func (s *Service) Stop(ctx context.Context, user *domain.User, id string) (*Sess
 
 	_ = s.db.First(&row, "id = ?", id)
 	v := toView(row)
+	s.enrichPcap(&v)
 	return &v, nil
 }
 

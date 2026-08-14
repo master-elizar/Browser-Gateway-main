@@ -19,6 +19,10 @@ func (h *Handler) historyRoot() string {
 	return filepath.Join(base, "history")
 }
 
+func (h *Handler) pcapPath(sessionID string) string {
+	return filepath.Join(h.cfg.PcapDir, sessionID+".pcap")
+}
+
 func (h *Handler) canAccessHistorySession(user *domain.User, sess *domain.BrowserSession) bool {
 	if user == nil || sess == nil {
 		return false
@@ -258,6 +262,12 @@ func (h *Handler) HistoryGet(c *fiber.Ctx) error {
 	if sess.NetTaintDomains != "" {
 		netTaintDomains = strings.Split(sess.NetTaintDomains, ",")
 	}
+	var pcapAvailable bool
+	var pcapSizeBytes int64
+	if info, err := os.Stat(h.pcapPath(id)); err == nil && !info.IsDir() && info.Size() > 0 {
+		pcapAvailable = true
+		pcapSizeBytes = info.Size()
+	}
 	return c.JSON(fiber.Map{
 		"session": fiber.Map{
 			"id":              sess.ID,
@@ -278,6 +288,8 @@ func (h *Handler) HistoryGet(c *fiber.Ctx) error {
 			"netTaintTotal":   sess.NetTaintTotal,
 			"netTaintFlagged": sess.NetTaintFlagged,
 			"netTaintDomains": netTaintDomains,
+			"pcapAvailable":   pcapAvailable,
+			"pcapSizeBytes":   pcapSizeBytes,
 		},
 		"frames":  frameItems,
 		"network": netItems,
@@ -320,6 +332,7 @@ func (h *Handler) HistoryDelete(c *fiber.Ctx) error {
 	_ = h.st.DB.Where("session_id = ?", id).Delete(&domain.NetworkEvent{}).Error
 	_ = h.st.DB.Where("session_id = ?", id).Delete(&domain.AuditEvent{}).Error
 	_ = os.RemoveAll(filepath.Join(h.historyRoot(), id))
+	_ = os.Remove(h.pcapPath(id))
 	_ = h.st.DB.Delete(&sess).Error
 	_ = h.auth.WriteAudit(user.ID, "admin.history.delete", "deleted history "+id)
 	return c.JSON(fiber.Map{"ok": true})

@@ -39,6 +39,10 @@ type BrowserSession struct {
 	Name         string        `json:"name"`
 	Status       SessionStatus `json:"status" gorm:"not null;index"`
 	ContainerID  string        `json:"containerId,omitempty"`
+	// PcapContainerID is the sidecar capture container's ID (see internal/orchestrator's
+	// CreatePcapSidecar) -- empty when capture is disabled or failed to start, which is
+	// non-fatal to the session itself.
+	PcapContainerID string `json:"-" gorm:"column:pcap_container_id"`
 	StartURL     string        `json:"startUrl,omitempty"`
 	// Launch options (per-session; empty DNS fields fall back to AppSettings at boot).
 	Browser      string  `json:"browser,omitempty" gorm:"default:chromium"` // chromium | firefox
@@ -154,6 +158,18 @@ type AppSettings struct {
 	// 0.17 — history + download zip
 	HistoryRetentionDays       int    `json:"historyRetentionDays" gorm:"column:history_retention_days;default:30"`
 	DownloadZipPasswordDefault string `json:"downloadZipPasswordDefault,omitempty" gorm:"column:download_zip_password_default"`
+
+	// PCAP capture (Stage 19) -- a per-session sidecar container captures the browser
+	// container's traffic to a .pcap file (see internal/orchestrator.CreatePcapSidecar and
+	// pcap-agent/). PcapMaxMB bounds worst-case disk usage per session; enforced by
+	// workers.StartPcapSizeGuard, which stops just the capture sidecar (not the session
+	// itself) once a running session's file crosses this.
+	PcapEnabled bool `json:"pcapEnabled" gorm:"column:pcap_enabled"`
+	PcapMaxMB   int  `json:"pcapMaxMb" gorm:"column:pcap_max_mb;default:500"`
+	// PcapUIVersion=0 means "not migrated yet" -- same version-guard pattern as
+	// FeedsUIVersion/ViewerUIVersion, so a startup backfill can turn PcapEnabled on once for
+	// existing installs without ever re-enabling it if an admin deliberately turns it off.
+	PcapUIVersion int `json:"-" gorm:"column:pcap_ui_version;default:0"`
 }
 
 func (AppSettings) TableName() string { return "app_settings" }

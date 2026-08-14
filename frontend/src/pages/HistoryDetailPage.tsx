@@ -24,6 +24,7 @@ export function HistoryDetailPage() {
   const [busy, setBusy] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [netOpen, setNetOpen] = useState(true);
+  const [pcapBusy, setPcapBusy] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
 
   const refresh = useCallback(async () => {
@@ -100,6 +101,26 @@ export function HistoryDetailPage() {
     setSelectedIdx(idx);
   }
 
+  async function downloadPcap() {
+    if (!accessToken || !id) return;
+    setPcapBusy(true);
+    try {
+      const res = await fetch(api.pcapUrl(id), { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${id}.pcap`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "pcap download error");
+    } finally {
+      setPcapBusy(false);
+    }
+  }
+
   if (!data && !error) {
     return <Skeleton className="h-64" />;
   }
@@ -129,6 +150,11 @@ export function HistoryDetailPage() {
           <ToolButton active={netOpen} onClick={() => setNetOpen((v) => !v)}>
             {t("viewer.network")}
           </ToolButton>
+          {sess?.pcapAvailable && (
+            <ToolButton onClick={() => void downloadPcap()} disabled={pcapBusy}>
+              {pcapBusy ? t("viewer.pcapDownloading") : t("viewer.pcapDownload")}
+            </ToolButton>
+          )}
           {user?.role === "SUPER_ADMIN" && (
             <Button variant="danger" disabled={busy} onClick={() => void onDelete()}>
               {t("history.delete")}

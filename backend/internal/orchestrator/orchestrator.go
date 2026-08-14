@@ -59,6 +59,11 @@ func New(cfg *config.Config) (*Orchestrator, error) {
 
 func (o *Orchestrator) Close() error { return nil }
 
+// PcapDir is the host-side directory pcap sidecar containers write into -- exposed so
+// callers (the pcap download handler, the size-guard worker) can resolve a session's
+// capture file path without duplicating the config lookup.
+func (o *Orchestrator) PcapDir() string { return o.cfg.PcapDir }
+
 func (o *Orchestrator) Ping(ctx context.Context) error {
 	if _, err := os.Stat("/var/run/docker.sock"); err != nil {
 		return fmt.Errorf("docker socket: %w", err)
@@ -202,6 +207,68 @@ func (o *Orchestrator) CreateAndStart(ctx context.Context, p CreateParams) (*Cre
 	}
 	metrics.ContainersCreated.Inc()
 	return &CreateResult{ContainerID: created.ID, Name: name}, nil
+}
+
+// CreatePcapSidecar launches a minimal packet-capture container joined to browserContainerID's
+// network namespace (NetworkMode: container:<id>), so it sees exactly that session's traffic
+// without the browser-engine container itself ever needing CAP_NET_RAW. Only this sidecar
+// gets that capability, dropped from everything else, no-new-privileges, non-root inside
+// (see pcap-agent/Dockerfile). Writes to <PcapDir>/<sessionID>.pcap, which the backend also
+// has direct filesystem access to (same host directory tree as its own data volume) for
+// serving downloads without proxying through the sidecar itself.
+func (o *Orchestrator) CreatePcapSidecar(ctx context.Context, sessionID, browserContainerID string) (string, error) {
+	// MkdirAll uses the in-container path (this process needs to actually create/see the
+	// directory); the bind mount below uses the host path (Binds is resolved by the Docker
+	// daemon against the host, not against this process's filesystem namespace) -- see
+	// config.PcapHostDir's doc comment for why these two can differ.
+	if err := os.MkdirAll(o.cfg.PcapDir, 0o775); err != nil {
+		return "", fmt.Errorf("pcap dir: %w", err)
+	}
+	name := fmt.Sprintf("browser-pcap-%s", shortID(sessionID))
+	_ = o.removeByName(ctx, name)
+
+	hostConfig := map[string]any{
+		"CapDrop":        []string{"ALL"},
+		"CapAdd":         []string{"NET_RAW"},
+		"SecurityOpt":    []string{"no-new-privileges:true"},
+		"ReadonlyRootfs": true,
+		"NetworkMode":    "container:" + browserContainerID,
+		"Binds":          []string{o.cfg.PcapHostDir + ":/pcap"},
+		"AutoRemove":     false,
+	}
+	body := map[string]any{
+		"Image": o.cfg.PcapImage,
+		// -U flushes each packet to disk as captured (matters since this file may be read
+		// mid-session by the download endpoint, not only after tcpdump exits). The
+		// process runs as the non-root "pcap" user the whole time -- it never starts as
+		// root, since the image's setcap'd binary already carries CAP_NET_RAW itself
+		// (see pcap-agent/Dockerfile). -s 0 keeps full packet contents, not just headers.
+		"Cmd": []string{
+			"-i", "any", "-p", "-U", "-s", "0",
+			"-w", "/pcap/" + sessionID + ".pcap",
+		},
+		"Labels": map[string]string{
+			"bg.managed":    "true",
+			"bg.session_id": sessionID,
+			"bg.role":       "pcap",
+		},
+		"HostConfig": hostConfig,
+	}
+
+	var created struct {
+		ID string `json:"Id"`
+	}
+	if err := o.doJSON(ctx, http.MethodPost, "/containers/create?name="+name, body, &created); err != nil {
+		return "", fmt.Errorf("pcap container create: %w", err)
+	}
+	if created.ID == "" {
+		return "", fmt.Errorf("pcap container create: empty id")
+	}
+	if err := o.doJSON(ctx, http.MethodPost, "/containers/"+created.ID+"/start", nil, nil); err != nil {
+		_ = o.Destroy(ctx, created.ID)
+		return "", fmt.Errorf("pcap container start: %w", err)
+	}
+	return created.ID, nil
 }
 
 func (o *Orchestrator) WaitHealthy(ctx context.Context, containerID string, timeout time.Duration) error {

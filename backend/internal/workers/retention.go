@@ -37,6 +37,23 @@ func historyRoot() string {
 	return filepath.Join(filepath.Dir(marker), "history")
 }
 
+// pcapRoot mirrors config.Config's PCAP_DIR derivation (internal/config/config.go) rather
+// than plumbing the whole config through to this package for one path.
+func pcapRoot() string {
+	if v := os.Getenv("PCAP_DIR"); v != "" {
+		return v
+	}
+	marker := os.Getenv("UPDATE_MARKER_FILE")
+	if marker == "" {
+		marker = "/opt/browser-gateway/data/update.requested"
+	}
+	return filepath.Join(filepath.Dir(marker), "pcaps")
+}
+
+func pcapPath(sessionID string) string {
+	return filepath.Join(pcapRoot(), sessionID+".pcap")
+}
+
 func enforceHistoryAge(db *gorm.DB) {
 	var settings domain.AppSettings
 	if err := db.First(&settings).Error; err != nil {
@@ -57,6 +74,7 @@ func enforceHistoryAge(db *gorm.DB) {
 		_ = db.Where("session_id = ?", s.ID).Delete(&domain.NetworkEvent{}).Error
 		_ = db.Where("session_id = ?", s.ID).Delete(&domain.AuditEvent{}).Error
 		_ = os.RemoveAll(filepath.Join(historyRoot(), s.ID))
+		_ = os.Remove(pcapPath(s.ID))
 		_ = db.Delete(&s).Error
 		log.Printf("retention: purged history session %s (older than %d days)", s.ID, days)
 	}

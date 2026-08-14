@@ -69,6 +69,9 @@ services:
       BROWSER_CPUS: "1.5"
       BROWSER_IMAGE: browser-gateway/browser-engine:local
       BROWSER_IMAGE_FIREFOX: browser-gateway/browser-engine-firefox:local
+      PCAP_IMAGE: browser-gateway/pcap-agent:local
+      # Host path (not the in-container /opt/browser-gateway/data path) -- see .env.example.
+      PCAP_HOST_DIR: ${HOST_DATA_DIR:-/opt/browser-gateway/data}/pcaps
       CERTS_DIR: /opt/browser-gateway/data/certs
       SETUP_KEY_FILE: /opt/browser-gateway/data/setup.bootstrap
       UPDATE_MARKER_FILE: /opt/browser-gateway/data/update.requested
@@ -155,6 +158,13 @@ services:
       args:
         ENGINE: firefox
     image: browser-gateway/browser-engine-firefox:local
+    profiles:
+      - build-only
+
+  pcap-agent:
+    build:
+      context: ../pcap-agent
+    image: browser-gateway/pcap-agent:local
     profiles:
       - build-only
 

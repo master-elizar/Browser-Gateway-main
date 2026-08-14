@@ -48,6 +48,12 @@ func reconcile(db *gorm.DB, orch *orchestrator.Orchestrator, sess *sessions.Serv
 	}).Find(&rows).Error
 
 	for _, row := range rows {
+		// A pcap sidecar (row.PcapContainerID) is also labeled bg.managed=true -- as long as
+		// it's still present, mark it known too, or the orphan sweep below would destroy an
+		// actively-capturing sidecar every cycle (it's never referenced by ContainerID).
+		if row.PcapContainerID != "" {
+			delete(known, row.PcapContainerID)
+		}
 		if row.ContainerID == "" {
 			continue
 		}
@@ -65,11 +71,11 @@ func reconcile(db *gorm.DB, orch *orchestrator.Orchestrator, sess *sessions.Serv
 		}).Error
 	}
 
-	// Orphan containers with no matching active session
+	// Orphan containers with no matching active session (browser or pcap sidecar)
 	for cid := range known {
 		var n int64
 		_ = db.Model(&domain.BrowserSession{}).
-			Where("container_id = ? AND status IN ?", cid, []domain.SessionStatus{
+			Where("(container_id = ? OR pcap_container_id = ?) AND status IN ?", cid, cid, []domain.SessionStatus{
 				domain.StatusCreating, domain.StatusStarting, domain.StatusRunning, domain.StatusIdle, domain.StatusStopping,
 			}).Count(&n).Error
 		if n > 0 {

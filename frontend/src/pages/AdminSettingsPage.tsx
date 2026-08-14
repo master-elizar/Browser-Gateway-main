@@ -97,6 +97,8 @@ const empty: AppSettings = {
   viewerUploadEnabled: true,
   viewerDownloadsEnabled: true,
   viewerNetworkEnabled: true,
+  pcapEnabled: true,
+  pcapMaxMb: 500,
   historyRetentionDays: 30,
   downloadZipPasswordDefault: "",
   downloadZipPasswordDefaultSet: false,
@@ -324,6 +326,7 @@ export function AdminSettingsPage() {
                         ["viewerUploadEnabled", "admin.viewerUpload", "admin.viewerUploadHint"],
                         ["viewerDownloadsEnabled", "admin.viewerDownloads", "admin.viewerDownloadsHint"],
                         ["viewerNetworkEnabled", "admin.viewerNetwork", "admin.viewerNetworkHint"],
+                        ["pcapEnabled", "admin.pcapEnabled", "admin.pcapEnabledHint"],
                       ] as const
                     ).map(([key, label, hint]) => (
                       <Toggle
@@ -334,6 +337,15 @@ export function AdminSettingsPage() {
                         description={t(hint)}
                       />
                     ))}
+                    <Field label={t("admin.pcapMaxMb")} hint={t("admin.pcapMaxMbHint")}>
+                      <Input
+                        type="number"
+                        min={10}
+                        className="max-w-xs"
+                        value={settings.pcapMaxMb ?? 500}
+                        onChange={(e) => num("pcapMaxMb", e.target.value)}
+                      />
+                    </Field>
                   </CardBody>
                 </Card>
                 <Button type="submit" disabled={busy}>

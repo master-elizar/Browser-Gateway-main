@@ -79,6 +79,8 @@ export type AppSettings = {
   historyRetentionDays?: number;
   downloadZipPasswordDefault?: string;
   downloadZipPasswordDefaultSet?: boolean;
+  pcapEnabled?: boolean;
+  pcapMaxMb?: number;
 };
 
 export type TIKeyView = {
@@ -254,6 +256,8 @@ export type BrowserSession = {
   netTaintTotal?: number;
   netTaintFlagged?: number;
   netTaintDomains?: string[];
+  pcapAvailable?: boolean;
+  pcapSizeBytes?: number;
 };
 
 export type CreateSessionInput = {
@@ -747,6 +751,10 @@ export const api = {
     return `/api/browser/${id}/downloads/${encodeURIComponent(fileId)}${qs ? `?${qs}` : ""}`;
   },
 
+  pcapUrl(id: string) {
+    return `/api/browser/${id}/pcap`;
+  },
+
   async listHistory(
     token: string,
     query?: { name?: string; browser?: string; from?: string; to?: string; tiVerdict?: string },
@@ -865,6 +873,8 @@ export type HistoryDetail = {
     netTaintTotal?: number;
     netTaintFlagged?: number;
     netTaintDomains?: string[];
+    pcapAvailable?: boolean;
+    pcapSizeBytes?: number;
   };
   frames: Array<{
     id: string;

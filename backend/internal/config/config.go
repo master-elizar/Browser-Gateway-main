@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -41,6 +42,22 @@ type Config struct {
 	UpdateMarkerFile   string
 	NetworkMarkerFile  string
 	GitHubRepo         string
+	// PcapImage is the sidecar packet-capture container image (see /pcap-agent) -- joined to
+	// a session's browser container via NetworkMode: container:<id> so only this narrow,
+	// capability-minimal helper ever needs CAP_NET_RAW, never the browser-engine container
+	// itself.
+	PcapImage string
+	// PcapDir mirrors historyRoot()'s derive-from-the-shared-data-volume convention
+	// (internal/workers/retention.go) rather than introducing a second base-path knob. This
+	// is the path as seen INSIDE the backend container (used for os.Stat/os.Remove here).
+	PcapDir string
+	// PcapHostDir is the same directory's path on the Docker HOST, not inside this
+	// container -- required because the orchestrator bind-mounts it into a container *it*
+	// creates (the pcap sidecar) via the Docker Engine API, which always resolves bind
+	// sources against the host filesystem. Set via docker-compose.yml from HOST_DATA_DIR
+	// (see deploy/.env.example) -- only diverges from PcapDir when installed somewhere
+	// other than the default /opt/browser-gateway.
+	PcapHostDir string
 }
 
 func Load() (*Config, error) {
@@ -75,6 +92,13 @@ func Load() (*Config, error) {
 		NetworkMarkerFile:   getEnv("NETWORK_MARKER_FILE", "/opt/browser-gateway/data/network.requested"),
 		GitHubRepo:          getEnv("GITHUB_REPO", "master-elizar/Browser-Gateway-main"),
 	}
+	cfg.PcapImage = getEnv("PCAP_IMAGE", "browser-gateway/pcap-agent:local")
+	cfg.PcapDir = getEnv("PCAP_DIR", filepath.Join(filepath.Dir(cfg.UpdateMarkerFile), "pcaps"))
+	// Falls back to PcapDir (the in-container path) so a deploy that hasn't picked up the
+	// HOST_DATA_DIR env var yet still works when installed at the default location --
+	// wrong only for a customized, not-yet-updated BG_INSTALL_DIR, same failure mode as any
+	// other env var this codebase hasn't been told about yet.
+	cfg.PcapHostDir = getEnv("PCAP_HOST_DIR", cfg.PcapDir)
 
 	if strings.TrimSpace(cfg.JWTSecret) == "" {
 		return nil, fmt.Errorf("JWT_SECRET is required")

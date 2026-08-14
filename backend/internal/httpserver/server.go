@@ -57,6 +57,7 @@ func New(cfg *config.Config) (*Server, error) {
 	_ = st.BackfillTIDefaults()
 	_ = st.BackfillViewerUIDefaults()
 	_ = st.BackfillFeedDefaults()
+	_ = st.BackfillPcapDefaults()
 
 	orch, err := orchestrator.New(cfg)
 	if err != nil {
@@ -99,6 +100,7 @@ func New(cfg *config.Config) (*Server, error) {
 	workers.StartPolicyWorker(st.DB, sess, 30*time.Second)
 	workers.StartRetentionWorker(st.DB, 5*time.Minute)
 	workers.StartReconcile(st.DB, orch, sess, 60*time.Second)
+	workers.StartPcapSizeGuard(st.DB, orch, 2*time.Minute)
 
 	return &Server{app: app, store: st, orch: orch, cfg: cfg, handle: h}, nil
 }

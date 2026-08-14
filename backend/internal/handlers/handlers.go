@@ -113,6 +113,7 @@ func (h *Handler) Register(app *fiber.App) {
 	authed.Post("/browser/:id/upload", h.BrowserUpload)
 	authed.Get("/browser/:id/downloads", h.BrowserDownloads)
 	authed.Get("/browser/:id/downloads/:fileId", h.BrowserDownloadFile)
+	authed.Get("/browser/:id/pcap", h.BrowserPcapDownload)
 	authed.Get("/browser/:id/network/events", h.BrowserNetworkEvents)
 	authed.Delete("/browser/:id/network/events", h.BrowserClearNetworkEvents)
 	authed.Post("/browser/:id/network/enrich", h.BrowserNetworkEnrich)

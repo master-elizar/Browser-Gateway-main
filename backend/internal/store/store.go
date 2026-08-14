@@ -90,6 +90,9 @@ func (s *Store) EnsureDefaultSettings(cfgMaxGlobal, cfgMaxPerUser, idleSec, maxD
 		DnsServers:                   "8.8.8.8,1.1.1.1",
 		DnsDohUrl:                    "https://cloudflare-dns.com/dns-query",
 		HistoryRetentionDays:         30,
+		PcapEnabled:                  true,
+		PcapMaxMB:                    500,
+		PcapUIVersion:                1,
 	}
 	return s.DB.Create(&settings).Error
 }
@@ -186,6 +189,27 @@ func (s *Store) BackfillFeedDefaults() error {
 		"ti_feed_greensnow_enabled":        true,
 		"ti_circlhashlookup_enabled":       true,
 	}).Error
+}
+
+// BackfillPcapDefaults turns PCAP capture on once for existing installs, matching the
+// "automatic for every session" default -- same version-guard pattern as
+// BackfillViewerUIDefaults/BackfillFeedDefaults.
+func (s *Store) BackfillPcapDefaults() error {
+	var settings domain.AppSettings
+	if err := s.DB.First(&settings).Error; err != nil {
+		return err
+	}
+	if settings.PcapUIVersion >= 1 {
+		return nil
+	}
+	updates := map[string]any{
+		"pcap_ui_version": 1,
+		"pcap_enabled":    true,
+	}
+	if settings.PcapMaxMB <= 0 {
+		updates["pcap_max_mb"] = 500
+	}
+	return s.DB.Model(&settings).Updates(updates).Error
 }
 
 func (s *Store) Ping(ctx context.Context) error {

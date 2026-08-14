@@ -18,6 +18,7 @@ func (h *Handler) viewerFeaturesDTO(s domain.AppSettings) fiber.Map {
 		"viewerUploadEnabled":             s.ViewerUploadEnabled,
 		"viewerDownloadsEnabled":          s.ViewerDownloadsEnabled,
 		"viewerNetworkEnabled":            s.ViewerNetworkEnabled,
+		"pcapEnabled":                     s.PcapEnabled,
 		"downloadZipPasswordDefaultSet":   strings.TrimSpace(s.DownloadZipPasswordDefault) != "",
 	}
 }

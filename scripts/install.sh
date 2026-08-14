@@ -261,6 +261,18 @@ step_config() {
     else
       echo "DOCKER_GID=${docker_gid}" >> "$ef"
     fi
+    # HOST_DATA_DIR: the *host* filesystem path of $INSTALL_DIR/data, as opposed to the
+    # in-container /opt/browser-gateway/data path the backend sees via its own bind mount.
+    # The orchestrator needs this to bind-mount into containers *it* creates (the pcap
+    # sidecar) via the Docker API, which always resolves paths against the host, not the
+    # backend container's own filesystem namespace -- those only coincidentally match when
+    # BG_INSTALL_DIR is left at its default. Always keep this current, same as DOCKER_GID,
+    # in case the install was ever moved.
+    if grep -q '^HOST_DATA_DIR=' "$ef"; then
+      sed -i "s|^HOST_DATA_DIR=.*|HOST_DATA_DIR=${INSTALL_DIR}/data|" "$ef"
+    else
+      echo "HOST_DATA_DIR=${INSTALL_DIR}/data" >> "$ef"
+    fi
   else
     umask 077
     cat > "$ef" <<EOF
@@ -268,6 +280,7 @@ POSTGRES_PASSWORD=$(rand_password)
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=$(rand_password)
 DOCKER_GID=${docker_gid}
+HOST_DATA_DIR=${INSTALL_DIR}/data
 TURN_URLS=turn:${host}:3478
 GF_SERVER_ROOT_URL=http://${host}:3000
 EOF
