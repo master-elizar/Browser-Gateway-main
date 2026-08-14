@@ -185,6 +185,69 @@ func builtinFeedDefs() []feedDef {
 			Permalink: "https://github.com/hagezi/dns-blocklists",
 			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedHaGeziEnabled },
 		},
+		{
+			ID:        "feed_ipsum",
+			Name:      "IPsum (multi-source aggregate, confidence >= 3)",
+			Kind:      KindIP,
+			URL:       "https://raw.githubusercontent.com/stamparm/ipsum/master/levels/3.txt",
+			Format:    feedFormatCIDRList,
+			TTL:       12 * time.Hour,
+			Permalink: "https://github.com/stamparm/ipsum",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedIPsumEnabled },
+		},
+		{
+			ID:   "feed_firehol",
+			Name: "FireHOL (level1+2)",
+			Kind: KindIP,
+			URL:  "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level1.netset",
+			ExtraURLs: []string{
+				"https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/firehol_level2.netset",
+			},
+			Format:    feedFormatCIDRList,
+			TTL:       12 * time.Hour,
+			Permalink: "https://github.com/firehol/blocklist-ipsets",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedFireHOLEnabled },
+		},
+		{
+			ID:        "feed_blocklistde",
+			Name:      "blocklist.de",
+			Kind:      KindIP,
+			URL:       "https://lists.blocklist.de/lists/all.txt",
+			Format:    feedFormatCIDRList,
+			TTL:       3 * time.Hour,
+			Permalink: "https://www.blocklist.de/",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedBlocklistDeEnabled },
+		},
+		{
+			ID:        "feed_cinsarmy",
+			Name:      "CINS Army List",
+			Kind:      KindIP,
+			URL:       "https://cinsscore.com/list/ci-badguys.txt",
+			Format:    feedFormatCIDRList,
+			TTL:       3 * time.Hour,
+			Permalink: "https://cinsscore.com/#list",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedCINSArmyEnabled },
+		},
+		{
+			ID:        "feed_etcompromised",
+			Name:      "Emerging Threats compromised IPs",
+			Kind:      KindIP,
+			URL:       "https://rules.emergingthreats.net/blockrules/compromised-ips.txt",
+			Format:    feedFormatCIDRList,
+			TTL:       12 * time.Hour,
+			Permalink: "https://rules.emergingthreats.net/",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedETCompromisedEnabled },
+		},
+		{
+			ID:        "feed_greensnow",
+			Name:      "GreenSnow",
+			Kind:      KindIP,
+			URL:       "https://blocklist.greensnow.co/greensnow.txt",
+			Format:    feedFormatCIDRList,
+			TTL:       3 * time.Hour,
+			Permalink: "https://greensnow.co/",
+			Enabled:   func(s domain.AppSettings) bool { return s.TiFeedGreenSnowEnabled },
+		},
 	}
 }
 
@@ -243,6 +306,13 @@ func (fm *FeedManager) refreshOne(d feedDef, lf *loadedFeed) {
 			lf.lastErr = err
 			lf.mu.Unlock()
 			return
+		}
+		for _, extraURL := range d.ExtraURLs {
+			more, err := fm.fetchCIDRList(extraURL)
+			if err != nil {
+				continue // one source being briefly down shouldn't drop the rest
+			}
+			cidrs = append(cidrs, more...)
 		}
 		lf.mu.Lock()
 		lf.cidrs = cidrs
