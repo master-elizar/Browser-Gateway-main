@@ -8,17 +8,19 @@
 # this narrow, capability-minimal helper ever gets raw-socket access, scoped to exactly one
 # session for exactly the session's lifetime.
 #
-# Runs as root inside the container rather than dropping to a non-root user via setcap:
-# Alpine's setcap/getcap live in a separate package (name/availability isn't reliably
-# checkable from a dev sandbox with no package-registry access) whose absence would break
-# this build outright, and the extra hardening it buys is marginal for a container this
-# narrowly scoped already -- no network listener, no user input, a single static command,
-# every other capability dropped, no-new-privileges, read-only rootfs, isolated to exactly
-# one session's netns for exactly that session's lifetime. CapAdd: NET_RAW at the container
-# level (see orchestrator.CreatePcapSidecar) is what actually grants the capability; this
-# just needs to not fight it by dropping to a user Docker didn't apply it to.
+# Runs as UID 65532 -- the same distroless "nonroot" UID install.sh already chowns
+# $INSTALL_DIR/data to for the backend container -- rather than as root. Linux capabilities
+# (unlike setuid-root privilege escalation) apply to a process's capability sets regardless
+# of its UID: CapAdd: NET_RAW at the container level (see orchestrator.CreatePcapSidecar)
+# grants raw-socket access to this process whether it's root or not, so there's no need for
+# root here at all. Matching the data directory's owning UID instead means this container
+# gets write access to its one bind-mounted output path (/pcap) through ordinary file
+# permissions, with no DAC-bypassing capability needed -- running as root under
+# CapDrop: ALL actually has *less* filesystem access than this, since CapDrop: ALL also
+# strips CAP_DAC_OVERRIDE, the capability that normally lets root ignore permission bits.
 FROM alpine:3.20
 
 RUN apk add --no-cache tcpdump
 
+USER 65532:65532
 ENTRYPOINT ["tcpdump"]
